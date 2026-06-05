@@ -1,0 +1,73 @@
+rules_version = '2';
+service firebase.storage {
+  match /b/{bucket}/o {
+    // Helper function to check if user is authenticated
+    function isAuthenticated() {
+      return request.auth != null;
+    }
+    
+    // Helper function to check if user owns the file
+    function isOwner(userId) {
+      return isAuthenticated() && request.auth.uid == userId;
+    }
+    
+    // Helper function to validate image file
+    function isValidImage() {
+      return request.resource != null &&
+        request.resource.contentType.matches('image/.*') &&
+        request.resource.size < 10 * 1024 * 1024; // 10MB limit
+    }
+    
+    // User profile photos
+    match /users/{userId}/profile/{fileName} {
+      // Anyone can read profile photos (public)
+      allow read: if true;
+      
+      // Only the user can upload their profile photo
+      allow write: if isOwner(userId) && 
+        isValidImage() &&
+        request.resource.size < 5 * 1024 * 1024; // 5MB limit for profile photos
+    }
+    
+    // Car photos for drivers
+    match /users/{userId}/cars/{fileName} {
+      // Anyone can read car photos (public for ride listings)
+      allow read: if true;
+      
+      // Only the user can upload their car photos
+      allow write: if isOwner(userId) && 
+        isValidImage();
+    }
+    
+    // Ride photos (optional feature)
+    match /rides/{rideId}/photos/{fileName} {
+      // Anyone authenticated can read ride photos
+      allow read: if isAuthenticated();
+      
+      // Only ride creator can upload ride photos
+      allow write: if isAuthenticated() &&
+        isValidImage() &&
+        // Check if user is the ride creator (requires Firestore read)
+        request.auth.uid == firestore.get(/databases/(default)/documents/rides/$(rideId)).data.riderId;
+    }
+    
+    // Chat attachments (future feature)
+    match /chats/{chatId}/attachments/{fileName} {
+      // Only chat participants can read attachments
+      allow read: if isAuthenticated() &&
+        request.auth.uid in firestore.get(/databases/(default)/documents/chats/$(chatId)).data.participantIds;
+      
+      // Only chat participants can upload attachments
+      allow write: if isAuthenticated() &&
+        request.auth.uid in firestore.get(/databases/(default)/documents/chats/$(chatId)).data.participantIds &&
+        isValidImage() &&
+        request.resource.size < 20 * 1024 * 1024; // 20MB limit for chat attachments
+    }
+    
+    // Admin uploads
+    match /admin/{allPaths=**} {
+      allow read, write: if isAuthenticated() &&
+        firestore.get(/databases/(default)/documents/users/$(request.auth.uid)).data.role == 'admin';
+    }
+  }
+}

@@ -1,0 +1,11 @@
+flutter_native_splash:
+  color: "#1E2228"
+  image: "android/app/src/main/res/mipmap-xxxhdpi/ic_launcher.png"
+  
+  android_12:
+    icon_background_color: "#1E2228"
+    image: "android/app/src/main/res/mipmap-xxxhdpi/ic_launcher.png"
+
+  android: true
+  ios: true
+  web: false

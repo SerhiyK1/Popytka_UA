@@ -1,0 +1,106 @@
+{
+  "project_info": {
+    "project_number": "740590697759",
+    "project_id": "popytka-ua",
+    "storage_bucket": "popytka-ua.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:740590697759:android:8b0bfbc0ac9a21fa94042a",
+        "android_client_info": {
+          "package_name": "com.example.popytka_ua"
+        }
+      },
+      "oauth_client": [
+        {
+          "client_id": "740590697759-db7u4c25ip853jl07frpjfspg2rcjs6a.apps.googleusercontent.com",
+          "client_type": 1,
+          "android_info": {
+            "package_name": "com.example.popytka_ua",
+            "certificate_hash": "c534d820180625a9aaeed9cc199108c616ac6643"
+          }
+        },
+        {
+          "client_id": "740590697759-4jjgq1qljnrdfuhllm4bmb77nqt0366h.apps.googleusercontent.com",
+          "client_type": 3
+        }
+      ],
+      "api_key": [
+        {
+          "current_key": "AIzaSyDku4VlmAtqmqjoSSKNfsiTLAqO2m9L9I8"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": [
+            {
+              "client_id": "740590697759-4jjgq1qljnrdfuhllm4bmb77nqt0366h.apps.googleusercontent.com",
+              "client_type": 3
+            },
+            {
+              "client_id": "740590697759-ik2o7c45idfsl9msn3i4kegvnobh1cu6.apps.googleusercontent.com",
+              "client_type": 2,
+              "ios_info": {
+                "bundle_id": "ua.popytka.popytkaua"
+              }
+            }
+          ]
+        }
+      }
+    },
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:740590697759:android:28fd0e943727bfae94042a",
+        "android_client_info": {
+          "package_name": "ua.popytka.popytka_ua"
+        }
+      },
+      "oauth_client": [
+        {
+          "client_id": "740590697759-1cimpnkb0tpe8o131mr5ngv94npf6i6e.apps.googleusercontent.com",
+          "client_type": 1,
+          "android_info": {
+            "package_name": "ua.popytka.popytka_ua",
+            "certificate_hash": "c534d820180625a9aaeed9cc199108c616ac6643"
+          }
+        },
+        {
+          "client_id": "740590697759-hg3gn7142da787kbf9udtp6fjidsso9c.apps.googleusercontent.com",
+          "client_type": 1,
+          "android_info": {
+            "package_name": "ua.popytka.popytka_ua",
+            "certificate_hash": "02b2daa6938361a0430c9a4315594c2b2d3ab188"
+          }
+        },
+        {
+          "client_id": "740590697759-4jjgq1qljnrdfuhllm4bmb77nqt0366h.apps.googleusercontent.com",
+          "client_type": 3
+        }
+      ],
+      "api_key": [
+        {
+          "current_key": "AIzaSyDku4VlmAtqmqjoSSKNfsiTLAqO2m9L9I8"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": [
+            {
+              "client_id": "740590697759-4jjgq1qljnrdfuhllm4bmb77nqt0366h.apps.googleusercontent.com",
+              "client_type": 3
+            },
+            {
+              "client_id": "740590697759-ik2o7c45idfsl9msn3i4kegvnobh1cu6.apps.googleusercontent.com",
+              "client_type": 2,
+              "ios_info": {
+                "bundle_id": "ua.popytka.popytkaua"
+              }
+            }
+          ]
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}

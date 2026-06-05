@@ -1,0 +1,64 @@
+name: popytka_ua
+description: "Popytka UA - Ridesharing app for Ukraine"
+publish_to: 'none'
+version: 1.0.0+1
+
+environment:
+  sdk: ^3.8.1
+
+dependencies:
+  flutter:
+    sdk: flutter
+  flutter_localizations:
+    sdk: flutter
+  
+  # State Management
+  flutter_riverpod: ^2.6.1
+  riverpod: ^2.6.1
+  riverpod_annotation: ^2.6.1
+
+  # Navigation
+  go_router: ^14.6.0
+
+  # Firebase
+  firebase_core: ^3.8.0
+  firebase_auth: ^5.3.3
+  cloud_firestore: ^5.5.0
+  firebase_storage: ^12.3.6
+  
+  # Maps & Location
+  flutter_map: ^7.0.0
+  flutter_map_animations: ^0.7.0
+  latlong2: ^0.9.1
+  
+  # Utils
+  shared_preferences: ^2.3.2
+  flutter_dotenv: ^5.2.1
+  intl: ^0.20.2
+  url_launcher: ^6.3.1
+  http: ^1.2.2
+  image_picker: ^1.1.2
+  
+  # Icons
+  cupertino_icons: ^1.0.8
+
+  # Models
+  freezed_annotation: ^2.4.4
+  json_annotation: ^4.9.0
+  uuid: ^4.5.2
+  google_sign_in: ^6.2.2
+
+dev_dependencies:
+  flutter_test:
+    sdk: flutter
+  flutter_lints: ^5.0.0
+  build_runner: ^2.4.13
+  riverpod_generator: ^2.6.3
+  freezed: ^2.5.7
+  json_serializable: ^6.9.0
+  flutter_launcher_icons: ^0.14.4
+  flutter_native_splash: ^2.4.7
+
+flutter:
+  uses-material-design: true
+  generate: true
