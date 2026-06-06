@@ -7,7 +7,9 @@ allprojects {
 
 rootProject.buildDir = "../build"
 subprojects {
-    // project.buildDir = "${rootProject.buildDir}/${project.name}"
+    if (project.name == "app") {
+        project.buildDir = "${rootProject.buildDir}/${project.name}"
+    }
 }
 subprojects {
     if (project.name != "app") {

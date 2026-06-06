@@ -576,4 +576,7 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get transaction_status => 'Status';
+
+  @override
+  String get error_past_time => 'Cannot select past time';
 }

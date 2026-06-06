@@ -20,8 +20,10 @@ class RatingRepository {
   CollectionReference<RatingModel> get _ratingsRef => _firestore
       .collection('ratings')
       .withConverter(
-        fromFirestore: (doc, _) =>
-            RatingModel.fromJson(doc.data()!..['id'] = doc.id),
+        fromFirestore: (doc, _) {
+          final data = doc.data()!;
+          return RatingModel.fromJson({...data, 'id': doc.id});
+        },
         toFirestore: (rating, _) => rating.toJson(),
       );
 

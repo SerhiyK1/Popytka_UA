@@ -576,4 +576,7 @@ class AppLocalizationsRu extends AppLocalizations {
 
   @override
   String get transaction_status => 'Статус';
+
+  @override
+  String get error_past_time => 'Нельзя выбрать прошедшее время';
 }

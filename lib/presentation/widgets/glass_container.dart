@@ -22,6 +22,10 @@ class GlassContainer extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+    final fillColor = isDark ? AppColors.glassFill : Colors.white.withValues(alpha: 0.8);
+    final borderColor = isDark ? AppColors.glassBorder : Colors.black12;
+
     // ClipRRect + BackboneFilter for blur
     return Padding(
       padding: margin ?? EdgeInsets.zero,
@@ -34,9 +38,9 @@ class GlassContainer extends StatelessWidget {
             child: Container(
               padding: padding,
               decoration: BoxDecoration(
-                color: AppColors.glassFill,
+                color: fillColor,
                 borderRadius: BorderRadius.circular(borderRadius),
-                border: border ?? Border.all(color: AppColors.glassBorder),
+                border: border ?? Border.all(color: borderColor),
               ),
               child: child,
             ),

@@ -189,5 +189,6 @@
     "no_transactions": "Транзакцій ще немає",
     "transaction_amount": "Сума",
     "transaction_date": "Дата",
-    "transaction_status": "Статус"
+    "transaction_status": "Статус",
+    "error_past_time": "Не можна обрати час, що вже минув"
 }

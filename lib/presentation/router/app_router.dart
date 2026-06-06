@@ -29,13 +29,20 @@ import '../screens/placeholder_screen.dart';
 
 part 'app_router.g.dart';
 
+// Use static global keys for absolute stability across rebuilds
+final _rootNavigatorKey = GlobalKey<NavigatorState>(debugLabel: 'root');
+final _homeNavigatorKey = GlobalKey<NavigatorState>(debugLabel: 'homeNav');
+final _publishNavigatorKey = GlobalKey<NavigatorState>(debugLabel: 'publishNav');
+final _messagesNavigatorKey = GlobalKey<NavigatorState>(debugLabel: 'messagesNav');
+final _profileNavigatorKey = GlobalKey<NavigatorState>(debugLabel: 'profileNav');
+
 @riverpod
 GoRouter goRouter(Ref ref) {
-  final rootNavigatorKey = GlobalKey<NavigatorState>();
-  final authRepo = ref.watch(authRepositoryProvider);
+  ref.keepAlive();
+  final authRepo = ref.read(authRepositoryProvider);
 
   return GoRouter(
-    navigatorKey: rootNavigatorKey,
+    navigatorKey: _rootNavigatorKey,
     initialLocation: '/splash',
     refreshListenable: _StreamToLegacyListenable(authRepo.authStateChanges),
 
@@ -116,19 +123,19 @@ GoRouter goRouter(Ref ref) {
         builder: (context, state) => const WalletScreen(),
       ),
 
-      // Edit Ride
+      // My Rides
+      GoRoute(
+        path: '/my_rides',
+        builder: (context, state) => const MyRidesScreen(),
+      ),
+
+      // Edit Ride (Root level to avoid Shell conflicts when editing from Details)
       GoRoute(
         path: '/edit_ride',
         builder: (context, state) {
           final ride = state.extra as RideModel;
           return PublishRideScreen(existingRide: ride);
         },
-      ),
-
-      // My Rides
-      GoRoute(
-        path: '/my_rides',
-        builder: (context, state) => const MyRidesScreen(),
       ),
 
       // Rating
@@ -166,6 +173,7 @@ GoRouter goRouter(Ref ref) {
         branches: [
           // HOME TAB
           StatefulShellBranch(
+            navigatorKey: _homeNavigatorKey,
             routes: [
               GoRoute(
                 path: '/',
@@ -175,6 +183,7 @@ GoRouter goRouter(Ref ref) {
           ),
           // PUBLISH TAB
           StatefulShellBranch(
+            navigatorKey: _publishNavigatorKey,
             routes: [
               GoRoute(
                 path: '/publish',
@@ -187,6 +196,7 @@ GoRouter goRouter(Ref ref) {
           ),
           // MESSAGES TAB
           StatefulShellBranch(
+            navigatorKey: _messagesNavigatorKey,
             routes: [
               GoRoute(
                 path: '/messages',
@@ -196,6 +206,7 @@ GoRouter goRouter(Ref ref) {
           ),
           // PROFILE TAB
           StatefulShellBranch(
+            navigatorKey: _profileNavigatorKey,
             routes: [
               GoRoute(
                 path: '/profile',

@@ -1233,6 +1233,12 @@ abstract class AppLocalizations {
   /// In uk, this message translates to:
   /// **'Статус'**
   String get transaction_status;
+
+  /// No description provided for @error_past_time.
+  ///
+  /// In uk, this message translates to:
+  /// **'Не можна обрати час, що вже минув'**
+  String get error_past_time;
 }
 
 class _AppLocalizationsDelegate

@@ -83,6 +83,8 @@ class _AddressAutocompleteFieldState extends State<AddressAutocompleteField> {
 
   void _showOverlay() {
     _removeOverlay();
+    final theme = Theme.of(context);
+    final onSurface = theme.colorScheme.onSurface;
 
     _overlayEntry = OverlayEntry(
       builder: (context) => Positioned(
@@ -96,7 +98,7 @@ class _AddressAutocompleteFieldState extends State<AddressAutocompleteField> {
           child: Material(
             elevation: 8,
             borderRadius: BorderRadius.circular(12),
-            color: AppColors.surface,
+            color: theme.colorScheme.surface,
             child: ConstrainedBox(
               constraints: const BoxConstraints(maxHeight: 200),
               child: ListView.builder(
@@ -114,14 +116,14 @@ class _AddressAutocompleteFieldState extends State<AddressAutocompleteField> {
                     ),
                     title: Text(
                       result.shortName,
-                      style: const TextStyle(color: Colors.white, fontSize: 14),
+                      style: TextStyle(color: onSurface, fontSize: 14),
                     ),
                     subtitle: Text(
                       result.displayName,
                       maxLines: 1,
                       overflow: TextOverflow.ellipsis,
-                      style: const TextStyle(
-                        color: Colors.white54,
+                      style: TextStyle(
+                        color: onSurface.withValues(alpha: 0.54),
                         fontSize: 11,
                       ),
                     ),
@@ -151,6 +153,9 @@ class _AddressAutocompleteFieldState extends State<AddressAutocompleteField> {
 
   @override
   Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    final onSurface = theme.colorScheme.onSurface;
+
     return CompositedTransformTarget(
       link: _layerLink,
       child: TextField(
@@ -161,14 +166,14 @@ class _AddressAutocompleteFieldState extends State<AddressAutocompleteField> {
             _showOverlay();
           }
         },
-        style: const TextStyle(
-          color: Colors.white,
+        style: TextStyle(
+          color: onSurface,
           fontSize: 16,
           fontWeight: FontWeight.w500,
         ),
         decoration: InputDecoration(
           hintText: widget.hintText,
-          hintStyle: const TextStyle(color: Colors.white54),
+          hintStyle: TextStyle(color: onSurface.withValues(alpha: 0.54)),
           prefixIcon: Icon(widget.icon, color: AppColors.secondary),
           suffixIcon: _isLoading
               ? const Padding(
@@ -181,7 +186,7 @@ class _AddressAutocompleteFieldState extends State<AddressAutocompleteField> {
                 )
               : null,
           filled: widget.filled,
-          fillColor: widget.fillColor ?? Colors.white10,
+          fillColor: widget.fillColor ?? onSurface.withValues(alpha: 0.05),
           border: widget.filled
               ? OutlineInputBorder(
                   borderRadius: BorderRadius.circular(12),

@@ -11,7 +11,9 @@ import 'package:popytka_ua/data/repositories/ride_repository.dart';
 import 'package:popytka_ua/data/repositories/auth_repository.dart';
 import 'package:popytka_ua/data/providers/user_provider.dart';
 import 'package:popytka_ua/data/services/nominatim_service.dart';
+import 'package:popytka_ua/data/services/osrm_routing_service.dart';
 import 'package:intl/intl.dart';
+import 'package:latlong2/latlong.dart';
 
 class PublishRideScreen extends ConsumerStatefulWidget {
   final RideModel? existingRide;
@@ -60,9 +62,12 @@ class _PublishRideScreenState extends ConsumerState<PublishRideScreen> {
   Future<void> _selectDate() async {
     DateTime tempPickedDate =
         _selectedDate ?? DateTime.now().add(const Duration(days: 1));
+    final theme = Theme.of(context);
+    final onSurface = theme.colorScheme.onSurface;
+
     await showModalBottomSheet(
       context: context,
-      backgroundColor: AppColors.surface,
+      backgroundColor: theme.colorScheme.surface,
       shape: const RoundedRectangleBorder(
         borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
       ),
@@ -78,7 +83,7 @@ class _PublishRideScreenState extends ConsumerState<PublishRideScreen> {
                     onPressed: () => Navigator.of(builder).pop(),
                     child: Text(
                       AppLocalizations.of(context)!.cancel,
-                      style: const TextStyle(color: Colors.white54),
+                      style: TextStyle(color: onSurface.withValues(alpha: 0.54)),
                     ),
                   ),
                   TextButton(
@@ -95,10 +100,10 @@ class _PublishRideScreenState extends ConsumerState<PublishRideScreen> {
               ),
               Expanded(
                 child: CupertinoTheme(
-                  data: const CupertinoThemeData(
+                  data: CupertinoThemeData(
                     textTheme: CupertinoTextThemeData(
                       dateTimePickerTextStyle: TextStyle(
-                        color: Colors.white,
+                        color: onSurface,
                         fontSize: 22,
                       ),
                     ),
@@ -138,9 +143,12 @@ class _PublishRideScreenState extends ConsumerState<PublishRideScreen> {
         _selectedTime!.minute,
       );
     }
+    final theme = Theme.of(context);
+    final onSurface = theme.colorScheme.onSurface;
+
     await showModalBottomSheet(
       context: context,
-      backgroundColor: AppColors.surface,
+      backgroundColor: theme.colorScheme.surface,
       shape: const RoundedRectangleBorder(
         borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
       ),
@@ -156,7 +164,7 @@ class _PublishRideScreenState extends ConsumerState<PublishRideScreen> {
                     onPressed: () => Navigator.of(builder).pop(),
                     child: Text(
                       AppLocalizations.of(context)!.cancel,
-                      style: const TextStyle(color: Colors.white54),
+                      style: TextStyle(color: onSurface.withValues(alpha: 0.54)),
                     ),
                   ),
                   TextButton(
@@ -173,10 +181,10 @@ class _PublishRideScreenState extends ConsumerState<PublishRideScreen> {
               ),
               Expanded(
                 child: CupertinoTheme(
-                  data: const CupertinoThemeData(
+                  data: CupertinoThemeData(
                     textTheme: CupertinoTextThemeData(
                       dateTimePickerTextStyle: TextStyle(
-                        color: Colors.white,
+                        color: onSurface,
                         fontSize: 22,
                       ),
                     ),
@@ -221,8 +229,6 @@ class _PublishRideScreenState extends ConsumerState<PublishRideScreen> {
       _selectedTime!.minute,
     );
 
-    // If editing and date hasn't changed, allow it even if it's "now" (nearly)
-    // but generally we want future dates.
     return combined;
   }
 
@@ -274,6 +280,17 @@ class _PublishRideScreenState extends ConsumerState<PublishRideScreen> {
 
     try {
       final isEditing = widget.existingRide != null;
+      
+      final fromLat = _fromResult?.latitude ?? (isEditing ? widget.existingRide!.fromLocation.latitude : 50.45);
+      final fromLng = _fromResult?.longitude ?? (isEditing ? widget.existingRide!.fromLocation.longitude : 30.52);
+      final toLat = _toResult?.latitude ?? (isEditing ? widget.existingRide!.toLocation.latitude : 49.83);
+      final toLng = _toResult?.longitude ?? (isEditing ? widget.existingRide!.toLocation.longitude : 24.02);
+
+      // Fetch real road route geometry before saving
+      final routePoints = await ref.read(osrmRoutingServiceProvider).getRoute(
+        LatLng(fromLat, fromLng),
+        LatLng(toLat, toLng),
+      );
 
       final ride = RideModel(
         id: isEditing ? widget.existingRide!.id : '',
@@ -283,24 +300,17 @@ class _PublishRideScreenState extends ConsumerState<PublishRideScreen> {
         fromLocation: LocationModel(
           city:
               _fromResult?.city ?? _fromController.text.split(',').first.trim(),
-          latitude:
-              _fromResult?.latitude ??
-              (isEditing ? widget.existingRide!.fromLocation.latitude : 50.45),
-          longitude:
-              _fromResult?.longitude ??
-              (isEditing ? widget.existingRide!.fromLocation.longitude : 30.52),
+          latitude: fromLat,
+          longitude: fromLng,
           address: _fromController.text.trim(),
         ),
         toLocation: LocationModel(
           city: _toResult?.city ?? _toController.text.split(',').first.trim(),
-          latitude:
-              _toResult?.latitude ??
-              (isEditing ? widget.existingRide!.toLocation.latitude : 49.83),
-          longitude:
-              _toResult?.longitude ??
-              (isEditing ? widget.existingRide!.toLocation.longitude : 24.02),
+          latitude: toLat,
+          longitude: toLng,
           address: _toController.text.trim(),
         ),
+        routePoints: routePoints,
         pricePerSeat: price,
         seatsAvailable: _seats,
         departureTime: departureDateTime,
@@ -330,7 +340,7 @@ class _PublishRideScreenState extends ConsumerState<PublishRideScreen> {
 
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
-            content: Text(isEditing ? "Ride Updated!" : "Ride Published!"),
+            content: Text(isEditing ? "Поїздку оновлено!" : "Поїздку опубліковано!"),
           ),
         );
         context.go('/');
@@ -358,16 +368,20 @@ class _PublishRideScreenState extends ConsumerState<PublishRideScreen> {
   @override
   Widget build(BuildContext context) {
     final t = AppLocalizations.of(context)!;
+    final theme = Theme.of(context);
+    final onSurface = theme.colorScheme.onSurface;
 
     return Scaffold(
       appBar: AppBar(
         backgroundColor: Colors.transparent,
+        elevation: 0,
         title: Text(
           widget.existingRide != null ? "Редагувати поїздку" : t.publish_title,
+          style: TextStyle(color: onSurface, fontWeight: FontWeight.bold),
         ),
         centerTitle: true,
         leading: IconButton(
-          icon: const Icon(Icons.arrow_back),
+          icon: Icon(Icons.arrow_back, color: onSurface),
           onPressed: () => context.go('/'),
         ),
       ),
@@ -399,24 +413,24 @@ class _PublishRideScreenState extends ConsumerState<PublishRideScreen> {
                 return Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    _buildSectionHeader('Оберіть автомобіль'),
+                    _buildSectionHeader('Оберіть автомобіль', onSurface),
                     Container(
                       padding: const EdgeInsets.symmetric(horizontal: 16),
                       decoration: BoxDecoration(
-                        color: Colors.white10,
+                        color: onSurface.withValues(alpha: 0.05),
                         borderRadius: BorderRadius.circular(12),
                       ),
                       child: DropdownButtonHideUnderline(
                         child: DropdownButton<String>(
                           isExpanded: true,
-                          dropdownColor: AppColors.surface,
+                          dropdownColor: theme.colorScheme.surface,
                           value: _selectedCarId,
                           icon: const Icon(
                             Icons.arrow_drop_down,
                             color: AppColors.secondary,
                           ),
-                          style: const TextStyle(
-                            color: Colors.white,
+                          style: TextStyle(
+                            color: onSurface,
                             fontSize: 16,
                           ),
                           onChanged: (String? newValue) {
@@ -444,13 +458,13 @@ class _PublishRideScreenState extends ConsumerState<PublishRideScreen> {
             ),
 
             // FROM input with autocomplete
-            _buildSectionHeader(t.from_label),
+            _buildSectionHeader(t.from_label, onSurface),
             AddressAutocompleteField(
               hintText: t.from_label,
               icon: Icons.location_on,
               controller: _fromController,
               filled: true,
-              fillColor: Colors.white10,
+              fillColor: onSurface.withValues(alpha: 0.05),
               onAddressSelected: (result) {
                 setState(() => _fromResult = result);
               },
@@ -459,13 +473,13 @@ class _PublishRideScreenState extends ConsumerState<PublishRideScreen> {
             const SizedBox(height: 16),
 
             // TO input with autocomplete
-            _buildSectionHeader(t.to_label),
+            _buildSectionHeader(t.to_label, onSurface),
             AddressAutocompleteField(
               hintText: t.to_label,
               icon: Icons.near_me,
               controller: _toController,
               filled: true,
-              fillColor: Colors.white10,
+              fillColor: onSurface.withValues(alpha: 0.05),
               onAddressSelected: (result) {
                 setState(() => _toResult = result);
               },
@@ -474,29 +488,29 @@ class _PublishRideScreenState extends ConsumerState<PublishRideScreen> {
             const SizedBox(height: 16),
 
             // Seats
-            _buildSectionHeader(t.seats_label),
+            _buildSectionHeader(t.seats_label, onSurface),
             Container(
               padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
               decoration: BoxDecoration(
-                border: Border.all(color: Colors.white54),
+                border: Border.all(color: onSurface.withValues(alpha: 0.12)),
                 borderRadius: BorderRadius.circular(12),
               ),
               child: Row(
                 mainAxisAlignment: MainAxisAlignment.spaceBetween,
                 children: [
                   const Icon(Icons.person, color: AppColors.secondary),
-                  Text("$_seats", style: const TextStyle(fontSize: 18)),
+                  Text("$_seats", style: TextStyle(fontSize: 18, color: onSurface)),
                   Row(
                     children: [
                       IconButton(
                         onPressed: () => setState(() => _seats++),
-                        icon: const Icon(Icons.add),
+                        icon: Icon(Icons.add, color: onSurface),
                       ),
                       IconButton(
                         onPressed: () => setState(() {
                           if (_seats > 1) _seats--;
                         }),
-                        icon: const Icon(Icons.remove),
+                        icon: Icon(Icons.remove, color: onSurface),
                       ),
                     ],
                   ),
@@ -513,7 +527,7 @@ class _PublishRideScreenState extends ConsumerState<PublishRideScreen> {
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
-                      _buildSectionHeader(t.departure_date),
+                      _buildSectionHeader(t.departure_date, onSurface),
                       InkWell(
                         onTap: _selectDate,
                         child: Container(
@@ -522,7 +536,7 @@ class _PublishRideScreenState extends ConsumerState<PublishRideScreen> {
                             vertical: 16,
                           ),
                           decoration: BoxDecoration(
-                            border: Border.all(color: Colors.white54),
+                            border: Border.all(color: onSurface.withValues(alpha: 0.12)),
                             borderRadius: BorderRadius.circular(12),
                           ),
                           child: Row(
@@ -542,8 +556,8 @@ class _PublishRideScreenState extends ConsumerState<PublishRideScreen> {
                                   style: TextStyle(
                                     fontSize: 16,
                                     color: _selectedDate != null
-                                        ? Colors.white
-                                        : Colors.white54,
+                                        ? onSurface
+                                        : onSurface.withValues(alpha: 0.54),
                                   ),
                                 ),
                               ),
@@ -559,7 +573,7 @@ class _PublishRideScreenState extends ConsumerState<PublishRideScreen> {
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
-                      _buildSectionHeader(t.departure_time),
+                      _buildSectionHeader(t.departure_time, onSurface),
                       InkWell(
                         onTap: _selectTime,
                         child: Container(
@@ -568,7 +582,7 @@ class _PublishRideScreenState extends ConsumerState<PublishRideScreen> {
                             vertical: 16,
                           ),
                           decoration: BoxDecoration(
-                            border: Border.all(color: Colors.white54),
+                            border: Border.all(color: onSurface.withValues(alpha: 0.12)),
                             borderRadius: BorderRadius.circular(12),
                           ),
                           child: Row(
@@ -586,8 +600,8 @@ class _PublishRideScreenState extends ConsumerState<PublishRideScreen> {
                                   style: TextStyle(
                                     fontSize: 16,
                                     color: _selectedTime != null
-                                        ? Colors.white
-                                        : Colors.white54,
+                                        ? onSurface
+                                        : onSurface.withValues(alpha: 0.54),
                                   ),
                                 ),
                               ),
@@ -604,15 +618,15 @@ class _PublishRideScreenState extends ConsumerState<PublishRideScreen> {
             const SizedBox(height: 16),
 
             // Price
-            _buildSectionHeader(t.price_label),
+            _buildSectionHeader(t.price_label, onSurface),
             TextField(
               controller: _priceController,
               keyboardType: TextInputType.number,
-              style: const TextStyle(color: Colors.white),
+              style: TextStyle(color: onSurface),
               decoration: InputDecoration(
                 prefixIcon: const Icon(Icons.money, color: AppColors.secondary),
                 filled: true,
-                fillColor: Colors.white10,
+                fillColor: onSurface.withValues(alpha: 0.05),
                 border: OutlineInputBorder(
                   borderRadius: BorderRadius.circular(12),
                   borderSide: BorderSide.none,
@@ -625,12 +639,21 @@ class _PublishRideScreenState extends ConsumerState<PublishRideScreen> {
             // Button
             ElevatedButton(
               onPressed: _isLoading ? null : _publishRide,
+              style: ElevatedButton.styleFrom(
+                backgroundColor: AppColors.primary,
+                foregroundColor: Colors.black,
+                padding: const EdgeInsets.symmetric(vertical: 16),
+                shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(12),
+                ),
+              ),
               child: _isLoading
-                  ? const CircularProgressIndicator()
+                  ? const CircularProgressIndicator(color: Colors.black)
                   : Text(
                       widget.existingRide != null
-                          ? "Зберегти"
+                          ? "Зберегти зміни"
                           : t.publish_action,
+                      style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 16),
                     ),
             ),
           ],
@@ -639,10 +662,10 @@ class _PublishRideScreenState extends ConsumerState<PublishRideScreen> {
     );
   }
 
-  Widget _buildSectionHeader(String title) {
+  Widget _buildSectionHeader(String title, Color onSurface) {
     return Padding(
       padding: const EdgeInsets.only(bottom: 8, left: 4),
-      child: Text(title, style: const TextStyle(color: Colors.white70)),
+      child: Text(title, style: TextStyle(color: onSurface.withValues(alpha: 0.6), fontWeight: FontWeight.w500)),
     );
   }
 }

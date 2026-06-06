@@ -21,7 +21,7 @@ class UserRepository {
         fromFirestore: (doc, _) {
           final data = doc.data();
           if (data == null) return null;
-          return UserModel.fromJson(data..['id'] = doc.id);
+          return UserModel.fromJson({...data, 'id': doc.id});
         },
         toFirestore: (user, _) {
           if (user == null) return {};

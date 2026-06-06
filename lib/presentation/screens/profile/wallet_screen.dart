@@ -15,6 +15,8 @@ class WalletScreen extends ConsumerWidget {
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final t = AppLocalizations.of(context)!;
+    final theme = Theme.of(context);
+    final onSurface = theme.colorScheme.onSurface;
     final userAsync = ref.watch(currentUserProvider);
     final transactionsStream = ref.watch(walletRepositoryProvider).getTransactions();
 
@@ -23,11 +25,11 @@ class WalletScreen extends ConsumerWidget {
       appBar: AppBar(
         backgroundColor: Colors.transparent,
         elevation: 0,
-        title: Text(t.wallet_title),
+        title: Text(t.wallet_title, style: TextStyle(color: onSurface)),
         centerTitle: true,
         leading: IconButton(
           onPressed: () => context.pop(),
-          icon: const Icon(Icons.chevron_left, size: 30),
+          icon: Icon(Icons.chevron_left, size: 30, color: onSurface),
         ),
       ),
       body: Stack(
@@ -48,7 +50,7 @@ class WalletScreen extends ConsumerWidget {
           
           userAsync.when(
             data: (user) {
-              if (user == null) return const Center(child: Text("Please Login"));
+              if (user == null) return Center(child: Text("Please Login", style: TextStyle(color: onSurface)));
               
               return Column(
                 children: [
@@ -64,15 +66,15 @@ class WalletScreen extends ConsumerWidget {
                         children: [
                           Text(
                             t.wallet_balance,
-                            style: const TextStyle(color: Colors.white70, fontSize: 14),
+                            style: TextStyle(color: onSurface.withValues(alpha: 0.7), fontSize: 14),
                           ),
                           const SizedBox(height: 8),
                           Text(
                             "${user.balance.toStringAsFixed(2)} ₴",
-                            style: const TextStyle(
+                            style: TextStyle(
                               fontSize: 36,
                               fontWeight: FontWeight.bold,
-                              color: Colors.white,
+                              color: onSurface,
                             ),
                           ),
                           const SizedBox(height: 24),
@@ -113,9 +115,10 @@ class WalletScreen extends ConsumerWidget {
                           padding: const EdgeInsets.symmetric(horizontal: 20.0, vertical: 8),
                           child: Text(
                             t.wallet_history,
-                            style: const TextStyle(
+                            style: TextStyle(
                               fontSize: 18,
                               fontWeight: FontWeight.bold,
+                              color: onSurface,
                             ),
                           ),
                         ),
@@ -132,9 +135,9 @@ class WalletScreen extends ConsumerWidget {
                                   child: Column(
                                     mainAxisAlignment: MainAxisAlignment.center,
                                     children: [
-                                      Icon(Icons.history, size: 64, color: Colors.white24),
+                                      Icon(Icons.history, size: 64, color: onSurface.withValues(alpha: 0.24)),
                                       const SizedBox(height: 16),
-                                      Text(t.no_transactions, style: TextStyle(color: Colors.white38)),
+                                      Text(t.no_transactions, style: TextStyle(color: onSurface.withValues(alpha: 0.38))),
                                     ],
                                   ),
                                 );
@@ -145,7 +148,7 @@ class WalletScreen extends ConsumerWidget {
                                 itemCount: transactions.length,
                                 separatorBuilder: (context, index) => const SizedBox(height: 12),
                                 itemBuilder: (context, index) {
-                                  return _buildTransactionItem(context, transactions[index], t);
+                                  return _buildTransactionItem(context, transactions[index], t, onSurface);
                                 },
                               );
                             },
@@ -158,7 +161,7 @@ class WalletScreen extends ConsumerWidget {
               );
             },
             loading: () => const Center(child: CircularProgressIndicator()),
-            error: (e, s) => Center(child: Text("Error: $e")),
+            error: (e, s) => Center(child: Text("Error: $e", style: TextStyle(color: onSurface))),
           ),
         ],
       ),
@@ -194,13 +197,18 @@ class WalletScreen extends ConsumerWidget {
     );
   }
 
-  Widget _buildTransactionItem(BuildContext context, TransactionModel tx, AppLocalizations t) {
+  Widget _buildTransactionItem(
+    BuildContext context,
+    TransactionModel tx,
+    AppLocalizations t,
+    Color onSurface,
+  ) {
     final isNegative = tx.amount < 0;
     final color = isNegative ? Colors.redAccent : Colors.greenAccent;
-    
+
     IconData icon;
     String typeLabel;
-    
+
     switch (tx.type) {
       case 'topup':
         icon = Icons.add_business_outlined;
@@ -236,11 +244,18 @@ class WalletScreen extends ConsumerWidget {
               children: [
                 Text(
                   typeLabel,
-                  style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 16),
+                  style: TextStyle(
+                    fontWeight: FontWeight.bold,
+                    fontSize: 16,
+                    color: onSurface,
+                  ),
                 ),
                 Text(
                   DateFormat('dd.MM.yyyy, HH:mm').format(tx.createdAt),
-                  style: const TextStyle(color: Colors.white38, fontSize: 12),
+                  style: TextStyle(
+                    color: onSurface.withValues(alpha: 0.38),
+                    fontSize: 12,
+                  ),
                 ),
               ],
             ),
@@ -260,24 +275,27 @@ class WalletScreen extends ConsumerWidget {
 
   void _showTopUpDialog(BuildContext context, WidgetRef ref) {
     final controller = TextEditingController();
+    final theme = Theme.of(context);
+    final onSurface = theme.colorScheme.onSurface;
+
     showDialog(
       context: context,
       builder: (context) => AlertDialog(
-        backgroundColor: Colors.grey.shade900,
-        title: Text("Поповнити баланс", style: TextStyle(color: Colors.white)),
+        backgroundColor: theme.colorScheme.surface,
+        title: Text("Поповнити баланс", style: TextStyle(color: onSurface)),
         content: TextField(
           controller: controller,
           keyboardType: TextInputType.number,
-          style: TextStyle(color: Colors.white),
+          style: TextStyle(color: onSurface),
           decoration: InputDecoration(
             hintText: "Сума (₴)",
-            hintStyle: TextStyle(color: Colors.white24),
+            hintStyle: TextStyle(color: onSurface.withValues(alpha: 0.24)),
           ),
         ),
         actions: [
           TextButton(
             onPressed: () => Navigator.pop(context),
-            child: Text("Скасувати"),
+            child: const Text("Скасувати"),
           ),
           ElevatedButton(
             onPressed: () {
@@ -287,7 +305,7 @@ class WalletScreen extends ConsumerWidget {
                 Navigator.pop(context);
               }
             },
-            child: Text("Поповнити"),
+            child: const Text("Поповнити"),
           ),
         ],
       ),
@@ -296,24 +314,27 @@ class WalletScreen extends ConsumerWidget {
 
   void _showWithdrawDialog(BuildContext context, WidgetRef ref) {
     final controller = TextEditingController();
+    final theme = Theme.of(context);
+    final onSurface = theme.colorScheme.onSurface;
+
     showDialog(
       context: context,
       builder: (context) => AlertDialog(
-        backgroundColor: Colors.grey.shade900,
-        title: Text("Вивести кошти", style: TextStyle(color: Colors.white)),
+        backgroundColor: theme.colorScheme.surface,
+        title: Text("Вивести кошти", style: TextStyle(color: onSurface)),
         content: TextField(
           controller: controller,
           keyboardType: TextInputType.number,
-          style: TextStyle(color: Colors.white),
+          style: TextStyle(color: onSurface),
           decoration: InputDecoration(
             hintText: "Сума (₴)",
-            hintStyle: TextStyle(color: Colors.white24),
+            hintStyle: TextStyle(color: onSurface.withValues(alpha: 0.24)),
           ),
         ),
         actions: [
           TextButton(
             onPressed: () => Navigator.pop(context),
-            child: Text("Скасувати"),
+            child: const Text("Скасувати"),
           ),
           ElevatedButton(
             onPressed: () {
@@ -323,7 +344,7 @@ class WalletScreen extends ConsumerWidget {
                 Navigator.pop(context);
               }
             },
-            child: Text("Вивести"),
+            child: const Text("Вивести"),
           ),
         ],
       ),

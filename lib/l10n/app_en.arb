@@ -184,5 +184,6 @@
     "no_transactions": "No transactions yet",
     "transaction_amount": "Amount",
     "transaction_date": "Date",
-    "transaction_status": "Status"
+    "transaction_status": "Status",
+    "error_past_time": "Cannot select past time"
 }

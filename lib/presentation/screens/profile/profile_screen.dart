@@ -63,6 +63,8 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
     final t = AppLocalizations.of(context);
     if (t == null) return const SizedBox.shrink();
 
+    final theme = Theme.of(context);
+    final onSurface = theme.colorScheme.onSurface;
     final currentUserAsync = ref.watch(currentUserProvider);
 
     return Scaffold(
@@ -72,17 +74,21 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
         elevation: 0,
         title: Text(
           t.profile_title,
-          style: const TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
+          style: TextStyle(
+            fontSize: 18,
+            fontWeight: FontWeight.bold,
+            color: onSurface,
+          ),
         ),
         centerTitle: true,
         leading: IconButton(
           onPressed: () => context.go('/'),
-          icon: const Icon(Icons.close),
+          icon: Icon(Icons.close, color: onSurface),
         ),
         actions: [
           IconButton(
             onPressed: () => context.push('/settings'),
-            icon: const Icon(Icons.settings_outlined),
+            icon: Icon(Icons.settings_outlined, color: onSurface),
           ),
         ],
       ),
@@ -118,7 +124,9 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
           currentUserAsync.when(
             data: (user) {
               if (user == null) {
-                return const Center(child: Text('Please login'));
+                return Center(
+                  child: Text('Please login', style: TextStyle(color: onSurface)),
+                );
               }
 
               return SingleChildScrollView(
@@ -186,9 +194,10 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
                               const SizedBox(width: 4),
                               Text(
                                 "${user.averageRating.toStringAsFixed(1)} (${user.numberOfRatings} ${t.ratings_and_reviews})",
-                                style: const TextStyle(
+                                style: TextStyle(
                                   fontSize: 16,
                                   fontWeight: FontWeight.w500,
+                                  color: onSurface,
                                 ),
                               ),
                             ],
@@ -225,24 +234,24 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
                     const SizedBox(height: 16),
 
                     // WALLET CARD
-                    _buildBalanceCard(t, user),
+                    _buildBalanceCard(t, user, onSurface),
 
                     const SizedBox(height: 24),
 
                     // ROLE TOGGLE
-                    _buildRoleToggle(t, user),
+                    _buildRoleToggle(t, user, onSurface),
 
                     const SizedBox(height: 24),
-                    _buildStatisticsSection(t, user),
+                    _buildStatisticsSection(t, user, onSurface),
 
                     if (user.role == 'driver') ...[
                       const SizedBox(height: 24),
-                      _buildVehicleSection(t, user),
+                      _buildVehicleSection(t, user, onSurface),
                     ],
 
                     const SizedBox(height: 24),
 
-                    _buildRatingsSection(t, user.id),
+                    _buildRatingsSection(t, user.id, onSurface),
 
                     const SizedBox(height: 40),
 
@@ -251,12 +260,14 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
                       icon: Icons.history,
                       label: t.my_rides,
                       onTap: () => context.push('/my_rides'),
+                      onSurface: onSurface,
                     ),
                     const SizedBox(height: 12),
                     _buildActionButton(
                       icon: Icons.settings,
                       label: t.settings_title,
                       onTap: () => context.push('/settings'),
+                      onSurface: onSurface,
                     ),
                     const SizedBox(height: 12),
                     _buildActionButton(
@@ -264,20 +275,21 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
                       label: 'Вийти',
                       isDanger: true,
                       onTap: _signOut,
+                      onSurface: onSurface,
                     ),
                   ],
                 ),
               );
             },
             loading: () => const Center(child: CircularProgressIndicator()),
-            error: (e, s) => Center(child: Text('Error: $e')),
+            error: (e, s) => Center(child: Text('Error: $e', style: TextStyle(color: onSurface))),
           ),
         ],
       ),
     );
   }
 
-  Widget _buildStatisticsSection(AppLocalizations t, dynamic user) {
+  Widget _buildStatisticsSection(AppLocalizations t, dynamic user, Color onSurface) {
     final statsAsync = ref.watch(statisticsProvider(user.id));
 
     return Column(
@@ -287,7 +299,11 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
           padding: const EdgeInsets.only(left: 4, bottom: 12),
           child: Text(
             t.statistics_title,
-            style: const TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
+            style: TextStyle(
+              fontSize: 16,
+              fontWeight: FontWeight.bold,
+              color: onSurface,
+            ),
           ),
         ),
         statsAsync.when(
@@ -302,18 +318,18 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
                 );
               },
               child: isDriver
-                  ? _buildDriverStats(t, stats)
-                  : _buildPassengerStats(t, stats),
+                  ? _buildDriverStats(t, stats, onSurface)
+                  : _buildPassengerStats(t, stats, onSurface),
             );
           },
           loading: () => const Center(child: CircularProgressIndicator()),
-          error: (e, stack) => const Center(child: Text("Error loading stats")),
+          error: (e, stack) => Center(child: Text("Error loading stats", style: TextStyle(color: onSurface))),
         ),
       ],
     );
   }
 
-  Widget _buildDriverStats(AppLocalizations t, dynamic stats) {
+  Widget _buildDriverStats(AppLocalizations t, dynamic stats, Color onSurface) {
     return GlassContainer(
       key: const ValueKey('driver_stats'),
       padding: const EdgeInsets.all(16),
@@ -328,6 +344,7 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
                   label: t.stat_total_rides,
                   value: stats.totalRidesPublished.toString(),
                   color: AppColors.primary,
+                  onSurface: onSurface,
                 ),
               ),
               const SizedBox(width: 12),
@@ -337,6 +354,7 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
                   label: t.stat_passengers,
                   value: stats.passengersCarried.toString(),
                   color: AppColors.secondary,
+                  onSurface: onSurface,
                 ),
               ),
             ],
@@ -348,13 +366,14 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
             value: "${stats.totalEarned.toStringAsFixed(2)} ₴",
             color: Colors.greenAccent,
             isWide: true,
+            onSurface: onSurface,
           ),
         ],
       ),
     );
   }
 
-  Widget _buildPassengerStats(AppLocalizations t, dynamic stats) {
+  Widget _buildPassengerStats(AppLocalizations t, dynamic stats, Color onSurface) {
     return GlassContainer(
       key: const ValueKey('passenger_stats'),
       padding: const EdgeInsets.all(16),
@@ -369,6 +388,7 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
                   label: t.stat_total_rides,
                   value: stats.totalRidesAsPassenger.toString(),
                   color: AppColors.primary,
+                  onSurface: onSurface,
                 ),
               ),
               const SizedBox(width: 12),
@@ -378,6 +398,7 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
                   label: t.stat_total_spent,
                   value: "${stats.totalSpent.toStringAsFixed(2)} ₴",
                   color: Colors.redAccent,
+                  onSurface: onSurface,
                 ),
               ),
             ],
@@ -392,6 +413,7 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
     required String label,
     required String value,
     required Color color,
+    required Color onSurface,
     bool isWide = false,
   }) {
     bool isHovered = false;
@@ -410,7 +432,7 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
               decoration: BoxDecoration(
                 color: isHovered
                     ? color.withValues(alpha: 0.2)
-                    : Colors.white.withValues(alpha: 0.05),
+                    : onSurface.withValues(alpha: 0.05),
                 borderRadius: BorderRadius.circular(16),
                 border: Border.all(
                   color: isHovered
@@ -439,17 +461,17 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
                           children: [
                             Text(
                               value,
-                              style: const TextStyle(
+                              style: TextStyle(
                                 fontSize: 22,
                                 fontWeight: FontWeight.bold,
-                                color: Colors.white,
+                                color: onSurface,
                               ),
                             ),
                             Text(
                               label,
-                              style: const TextStyle(
+                              style: TextStyle(
                                 fontSize: 12,
-                                color: Colors.white70,
+                                color: onSurface.withValues(alpha: 0.7),
                               ),
                             ),
                           ],
@@ -463,19 +485,19 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
                         const SizedBox(height: 12),
                         Text(
                           value,
-                          style: const TextStyle(
+                          style: TextStyle(
                             fontSize: 24,
                             fontWeight: FontWeight.bold,
-                            color: Colors.white,
+                            color: onSurface,
                           ),
                         ),
                         const SizedBox(height: 4),
                         Text(
                           label,
                           textAlign: TextAlign.center,
-                          style: const TextStyle(
+                          style: TextStyle(
                             fontSize: 12,
-                            color: Colors.white70,
+                            color: onSurface.withValues(alpha: 0.7),
                           ),
                         ),
                       ],
@@ -487,7 +509,7 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
     );
   }
 
-  Widget _buildRatingsSection(AppLocalizations t, String userId) {
+  Widget _buildRatingsSection(AppLocalizations t, String userId, Color onSurface) {
     final ratingsStream = ref
         .watch(ratingRepositoryProvider)
         .getUserRatings(userId);
@@ -499,7 +521,11 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
           padding: const EdgeInsets.only(left: 4, bottom: 12),
           child: Text(
             t.ratings_and_reviews,
-            style: const TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
+            style: TextStyle(
+              fontSize: 16,
+              fontWeight: FontWeight.bold,
+              color: onSurface,
+            ),
           ),
         ),
         GlassContainer(
@@ -512,20 +538,20 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
                 return const Center(child: CircularProgressIndicator());
               }
               if (snapshot.hasError) {
-                return Center(child: Text('Error: ${snapshot.error}'));
+                return Center(child: Text('Error: ${snapshot.error}', style: TextStyle(color: onSurface)));
               }
               final ratings = snapshot.data ?? [];
               if (ratings.isEmpty) {
-                return Center(child: Text(t.no_ratings_yet));
+                return Center(child: Text(t.no_ratings_yet, style: TextStyle(color: onSurface.withValues(alpha: 0.5))));
               }
               return ListView.separated(
                 shrinkWrap: true,
                 physics: const NeverScrollableScrollPhysics(),
                 itemCount: ratings.length,
                 separatorBuilder: (context, index) =>
-                    const Divider(color: Colors.white12),
+                    Divider(color: onSurface.withValues(alpha: 0.12)),
                 itemBuilder: (context, index) {
-                  return _buildRatingItem(ratings[index]);
+                  return _buildRatingItem(ratings[index], onSurface);
                 },
               );
             },
@@ -535,7 +561,7 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
     );
   }
 
-  Widget _buildRatingItem(RatingModel rating) {
+  Widget _buildRatingItem(RatingModel rating, Color onSurface) {
     return Padding(
       padding: const EdgeInsets.symmetric(vertical: 8.0),
       child: Column(
@@ -554,7 +580,7 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
               const Spacer(),
               Text(
                 DateFormat.yMMMd().format(rating.createdAt),
-                style: const TextStyle(color: Colors.white54, fontSize: 12),
+                style: TextStyle(color: onSurface.withValues(alpha: 0.54), fontSize: 12),
               ),
             ],
           ),
@@ -562,7 +588,7 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
             const SizedBox(height: 8),
             Text(
               rating.comment!,
-              style: const TextStyle(color: Colors.white70),
+              style: TextStyle(color: onSurface.withValues(alpha: 0.7)),
             ),
           ],
         ],
@@ -570,7 +596,7 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
     );
   }
 
-  Widget _buildBalanceCard(AppLocalizations t, dynamic user) {
+  Widget _buildBalanceCard(AppLocalizations t, dynamic user, Color onSurface) {
     return GlassContainer(
       padding: const EdgeInsets.all(20),
       borderRadius: 24,
@@ -594,11 +620,15 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
               children: [
                 Text(
                   t.wallet_balance,
-                  style: const TextStyle(fontSize: 12, color: Colors.white54),
+                  style: TextStyle(fontSize: 12, color: onSurface.withValues(alpha: 0.54)),
                 ),
                 Text(
                   "${user.balance.toStringAsFixed(2)} ₴",
-                  style: const TextStyle(fontSize: 20, fontWeight: FontWeight.bold),
+                  style: TextStyle(
+                    fontSize: 20,
+                    fontWeight: FontWeight.bold,
+                    color: onSurface,
+                  ),
                 ),
               ],
             ),
@@ -615,11 +645,11 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
     );
   }
 
-  Widget _buildRoleToggle(AppLocalizations t, dynamic user) {
+  Widget _buildRoleToggle(AppLocalizations t, dynamic user, Color onSurface) {
     return Container(
       padding: const EdgeInsets.all(4),
       decoration: BoxDecoration(
-        color: Colors.white.withValues(alpha: 0.05),
+        color: onSurface.withValues(alpha: 0.05),
         borderRadius: BorderRadius.circular(16),
       ),
       child: Row(
@@ -628,18 +658,20 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
             t.passenger_label,
             user.role == 'rider',
             () => _toggleUserRole('rider'),
+            onSurface,
           ),
           _buildRoleTab(
             t.driver_label,
             user.role == 'driver',
             () => _toggleUserRole('driver'),
+            onSurface,
           ),
         ],
       ),
     );
   }
 
-  Widget _buildRoleTab(String label, bool isActive, VoidCallback onTap) {
+  Widget _buildRoleTab(String label, bool isActive, VoidCallback onTap, Color onSurface) {
     return Expanded(
       child: GestureDetector(
         onTap: _isUpdatingRole ? null : onTap,
@@ -654,7 +686,7 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
             label,
             textAlign: TextAlign.center,
             style: TextStyle(
-              color: isActive ? Colors.black : Colors.white54,
+              color: isActive ? Colors.black : onSurface.withValues(alpha: 0.54),
               fontWeight: FontWeight.bold,
             ),
           ),
@@ -663,7 +695,7 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
     );
   }
 
-  Widget _buildVehicleSection(AppLocalizations t, dynamic user) {
+  Widget _buildVehicleSection(AppLocalizations t, dynamic user, Color onSurface) {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
@@ -671,14 +703,18 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
           padding: const EdgeInsets.only(left: 4, bottom: 12),
           child: Text(
             t.car_details,
-            style: const TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
+            style: TextStyle(
+              fontSize: 16,
+              fontWeight: FontWeight.bold,
+              color: onSurface,
+            ),
           ),
         ),
         if (user.cars.isEmpty)
           Center(
             child: Text(
               t.car_info_required,
-              style: const TextStyle(color: Colors.white38, fontSize: 12),
+              style: TextStyle(color: onSurface.withValues(alpha: 0.38), fontSize: 12),
             ),
           )
         else
@@ -700,9 +736,10 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
                       Expanded(
                         child: Text(
                           '${car.brand} ${car.model}',
-                          style: const TextStyle(
+                          style: TextStyle(
                             fontSize: 18,
                             fontWeight: FontWeight.bold,
+                            color: onSurface,
                           ),
                         ),
                       ),
@@ -716,16 +753,19 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
                       _buildDetailBox(
                         t.car_year,
                         car.year,
+                        onSurface,
                         width: (MediaQuery.of(context).size.width - 96) / 3,
                       ),
                       _buildDetailBox(
                         t.car_plate,
                         car.plate,
+                        onSurface,
                         width: (MediaQuery.of(context).size.width - 72) / 2,
                       ),
                       _buildDetailBox(
                         t.car_color,
                         car.color,
+                        onSurface,
                         width: (MediaQuery.of(context).size.width - 96) / 3,
                       ),
                     ],
@@ -761,7 +801,8 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
 
   Widget _buildDetailBox(
     String label,
-    String value, {
+    String value,
+    Color onSurface, {
     bool isGold = false,
     double? width,
   }) {
@@ -771,12 +812,12 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
       decoration: BoxDecoration(
         color: isGold
             ? AppColors.primary.withValues(alpha: 0.1)
-            : Colors.white.withValues(alpha: 0.05),
+            : onSurface.withValues(alpha: 0.05),
         borderRadius: BorderRadius.circular(12),
         border: Border.all(
           color: isGold
               ? AppColors.primary.withValues(alpha: 0.3)
-              : Colors.white10,
+              : onSurface.withValues(alpha: 0.1),
         ),
       ),
       child: Column(
@@ -784,7 +825,7 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
         children: [
           Text(
             label,
-            style: const TextStyle(fontSize: 10, color: Colors.white54),
+            style: TextStyle(fontSize: 10, color: onSurface.withValues(alpha: 0.54)),
           ),
           const SizedBox(height: 2),
           Text(
@@ -792,7 +833,7 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
             style: TextStyle(
               fontSize: 14,
               fontWeight: FontWeight.bold,
-              color: isGold ? AppColors.primary : Colors.white,
+              color: isGold ? AppColors.primary : onSurface,
             ),
           ),
         ],
@@ -803,6 +844,7 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
   Widget _buildActionButton({
     required IconData icon,
     required String label,
+    required Color onSurface,
     bool isDanger = false,
     required VoidCallback onTap,
   }) {
@@ -824,11 +866,11 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
                 label,
                 style: TextStyle(
                   fontSize: 16,
-                  color: isDanger ? Colors.redAccent : Colors.white,
+                  color: isDanger ? Colors.redAccent : onSurface,
                 ),
               ),
             ),
-            const Icon(Icons.chevron_right, color: Colors.white24),
+            Icon(Icons.chevron_right, color: onSurface.withValues(alpha: 0.24)),
           ],
         ),
       ),

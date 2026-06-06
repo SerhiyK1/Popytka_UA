@@ -13,8 +13,10 @@ class ChatRepository {
   CollectionReference<ChatModel> get _chatsRef => _firestore
       .collection('chats')
       .withConverter(
-        fromFirestore: (snapshot, _) =>
-            ChatModel.fromJson(snapshot.data()!..['id'] = snapshot.id),
+        fromFirestore: (snapshot, _) {
+          final data = snapshot.data()!;
+          return ChatModel.fromJson({...data, 'id': snapshot.id});
+        },
         toFirestore: (chat, _) => chat.toJson()..remove('id'),
       );
 
@@ -34,8 +36,10 @@ class ChatRepository {
         .collection('messages')
         .orderBy('createdAt', descending: true)
         .withConverter(
-          fromFirestore: (snapshot, _) =>
-              MessageModel.fromJson(snapshot.data()!..['id'] = snapshot.id),
+          fromFirestore: (snapshot, _) {
+            final data = snapshot.data()!;
+            return MessageModel.fromJson({...data, 'id': snapshot.id});
+          },
           toFirestore: (msg, _) => msg.toJson()..remove('id'),
         )
         .snapshots()

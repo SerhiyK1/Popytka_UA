@@ -38,6 +38,7 @@ void main() {
       // Init Sequence: WidgetsBinding -> Firebase -> Localization
 
       bool firebaseInitialized = false;
+      bool isDemoMode = false;
       try {
         await Firebase.initializeApp();
         firebaseInitialized = true;
@@ -58,11 +59,18 @@ void main() {
           ),
         );
         firebaseInitialized = true;
+        isDemoMode = true;
       }
 
       // EMULATOR CONNECTION
       if (kDebugMode && firebaseInitialized) {
-        await _connectToFirebaseEmulators();
+        // Connect to emulators only in Demo Mode or if explicitly requested via compile-time flag
+        const useEmulatorOverride = bool.fromEnvironment('USE_EMULATOR', defaultValue: false);
+        if (isDemoMode || useEmulatorOverride) {
+          await _connectToFirebaseEmulators();
+        } else {
+          debugPrint('☁️ Connected directly to Live Firebase Cloud Console (Debug Mode)');
+        }
       }
 
       if (!firebaseInitialized) {

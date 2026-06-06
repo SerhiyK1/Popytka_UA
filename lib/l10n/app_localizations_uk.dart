@@ -576,4 +576,7 @@ class AppLocalizationsUk extends AppLocalizations {
 
   @override
   String get transaction_status => 'Статус';
+
+  @override
+  String get error_past_time => 'Не можна обрати час, що вже минув';
 }

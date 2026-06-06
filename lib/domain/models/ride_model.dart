@@ -1,5 +1,6 @@
 import 'package:freezed_annotation/freezed_annotation.dart';
 import 'package:flutter/foundation.dart';
+import 'package:latlong2/latlong.dart';
 import 'location_model.dart';
 
 part 'ride_model.freezed.dart';
@@ -14,6 +15,7 @@ abstract class RideModel with _$RideModel {
     String? carId,
     required LocationModel fromLocation,
     required LocationModel toLocation,
+    @Default([]) List<LatLng> routePoints, // Full road geometry
     @Default('pending') String status,
     required double pricePerSeat,
     required int seatsAvailable,
