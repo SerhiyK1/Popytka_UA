@@ -45,9 +45,18 @@ class _HomeScreenState extends ConsumerState<HomeScreen>
   List<LatLng> _activeRoutePoints = [];
   bool _isSearchingRoute = false;
 
+  TimeOfDay _roundTo5Minutes(TimeOfDay time) {
+    final roundedMinute = (time.minute / 5).round() * 5;
+    if (roundedMinute == 60) {
+      return TimeOfDay(hour: (time.hour + 1) % 24, minute: 0);
+    }
+    return TimeOfDay(hour: time.hour, minute: roundedMinute);
+  }
+
   @override
   void initState() {
     super.initState();
+    _selectedTime = _roundTo5Minutes(TimeOfDay.now());
     _mapController = AnimatedMapController(vsync: this);
     _pulseController = AnimationController(
       vsync: this,
@@ -605,7 +614,7 @@ class _HomeScreenState extends ConsumerState<HomeScreen>
           // If selected today, ensure time is not in the past
           final now = DateTime.now();
           if (_isToday(date)) {
-            final nowTime = TimeOfDay.fromDateTime(now);
+            final nowTime = _roundTo5Minutes(TimeOfDay.fromDateTime(now));
             if (_isBefore(nowTime, _selectedTime) == false) {
               _selectedTime = nowTime;
             }
@@ -620,11 +629,12 @@ class _HomeScreenState extends ConsumerState<HomeScreen>
     DateTime initialTime;
     
     if (_isToday(_selectedDate)) {
-      // If today, initial time should be at least now
-      if (_isBefore(TimeOfDay.fromDateTime(now), _selectedTime)) {
+      // If today, initial time should be at least now (rounded)
+      final roundedNow = _roundTo5Minutes(TimeOfDay.fromDateTime(now));
+      if (_isBefore(roundedNow, _selectedTime)) {
         initialTime = DateTime(now.year, now.month, now.day, _selectedTime.hour, _selectedTime.minute);
       } else {
-        initialTime = now;
+        initialTime = DateTime(now.year, now.month, now.day, roundedNow.hour, roundedNow.minute);
       }
     } else {
       initialTime = DateTime(now.year, now.month, now.day, _selectedTime.hour, _selectedTime.minute);
@@ -681,6 +691,7 @@ class _HomeScreenState extends ConsumerState<HomeScreen>
                   child: CupertinoDatePicker(
                     mode: CupertinoDatePickerMode.time,
                     use24hFormat: true,
+                    minuteInterval: 5,
                     initialDateTime: initialTime,
                     minimumDate: _isToday(_selectedDate) ? now.subtract(const Duration(minutes: 1)) : null,
                     onDateTimeChanged: (DateTime newTime) {
@@ -701,7 +712,7 @@ class _HomeScreenState extends ConsumerState<HomeScreen>
         
         if (_isToday(_selectedDate) && selectedDateTime.isBefore(now)) {
           setState(() {
-            _selectedTime = TimeOfDay.fromDateTime(now);
+            _selectedTime = _roundTo5Minutes(TimeOfDay.fromDateTime(now));
           });
           ScaffoldMessenger.of(context).showSnackBar(
             SnackBar(content: Text(AppLocalizations.of(context)!.error_past_time)),

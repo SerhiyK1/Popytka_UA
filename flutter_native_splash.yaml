@@ -1,10 +1,11 @@
 flutter_native_splash:
-  color: "#1E2228"
-  image: "android/app/src/main/res/mipmap-xxxhdpi/ic_launcher.png"
+  background_image: "assets/splash.png"
+  fullscreen: true
   
   android_12:
+    color: "#1E2228"
+    image: "assets/icons/cropped_app_icon.png"
     icon_background_color: "#1E2228"
-    image: "android/app/src/main/res/mipmap-xxxhdpi/ic_launcher.png"
 
   android: true
   ios: true

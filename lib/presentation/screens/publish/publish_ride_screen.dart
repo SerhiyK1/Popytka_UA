@@ -38,6 +38,14 @@ class _PublishRideScreenState extends ConsumerState<PublishRideScreen> {
   TimeOfDay? _selectedTime;
   String? _selectedCarId;
 
+  TimeOfDay _roundTo5Minutes(TimeOfDay time) {
+    final roundedMinute = (time.minute / 5).round() * 5;
+    if (roundedMinute == 60) {
+      return TimeOfDay(hour: (time.hour + 1) % 24, minute: 0);
+    }
+    return TimeOfDay(hour: time.hour, minute: roundedMinute);
+  }
+
   @override
   void initState() {
     super.initState();
@@ -48,14 +56,14 @@ class _PublishRideScreenState extends ConsumerState<PublishRideScreen> {
       _priceController.text = ride.pricePerSeat.toStringAsFixed(0);
       _seats = ride.seatsAvailable;
       _selectedDate = ride.departureTime;
-      _selectedTime = TimeOfDay.fromDateTime(ride.departureTime);
+      _selectedTime = _roundTo5Minutes(TimeOfDay.fromDateTime(ride.departureTime));
       _selectedCarId = ride.carId;
     } else {
       // Set default date to tomorrow
       _selectedDate = DateTime.now().add(const Duration(days: 1));
       // Set default time to current time + 1 hour
       final now = DateTime.now().add(const Duration(hours: 1));
-      _selectedTime = TimeOfDay(hour: now.hour, minute: now.minute);
+      _selectedTime = _roundTo5Minutes(TimeOfDay(hour: now.hour, minute: now.minute));
     }
   }
 
@@ -135,12 +143,22 @@ class _PublishRideScreenState extends ConsumerState<PublishRideScreen> {
   Future<void> _selectTime() async {
     DateTime tempPickedTime = DateTime.now();
     if (_selectedTime != null) {
+      final roundedTime = _roundTo5Minutes(_selectedTime!);
       tempPickedTime = DateTime(
         tempPickedTime.year,
         tempPickedTime.month,
         tempPickedTime.day,
-        _selectedTime!.hour,
-        _selectedTime!.minute,
+        roundedTime.hour,
+        roundedTime.minute,
+      );
+    } else {
+      final roundedTime = _roundTo5Minutes(TimeOfDay.fromDateTime(tempPickedTime));
+      tempPickedTime = DateTime(
+        tempPickedTime.year,
+        tempPickedTime.month,
+        tempPickedTime.day,
+        roundedTime.hour,
+        roundedTime.minute,
       );
     }
     final theme = Theme.of(context);
@@ -192,6 +210,7 @@ class _PublishRideScreenState extends ConsumerState<PublishRideScreen> {
                   child: CupertinoDatePicker(
                     mode: CupertinoDatePickerMode.time,
                     use24hFormat: true,
+                    minuteInterval: 5,
                     initialDateTime: tempPickedTime,
                     onDateTimeChanged: (DateTime newTime) {
                       tempPickedTime = newTime;
@@ -333,7 +352,7 @@ class _PublishRideScreenState extends ConsumerState<PublishRideScreen> {
           _seats = 3;
           _selectedDate = DateTime.now().add(const Duration(days: 1));
           final now = DateTime.now().add(const Duration(hours: 1));
-          _selectedTime = TimeOfDay(hour: now.hour, minute: now.minute);
+          _selectedTime = _roundTo5Minutes(TimeOfDay(hour: now.hour, minute: now.minute));
           _fromResult = null;
           _toResult = null;
         }
