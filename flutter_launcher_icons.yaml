@@ -4,7 +4,7 @@ dev_dependencies:
 flutter_launcher_icons:
   android: "launcher_icon"
   ios: true
-  image_path: "android/app/src/main/res/mipmap-xxxhdpi/ic_launcher.png"
+  image_path: "assets/icons/cropped_app_icon.png"
   min_sdk_android: 21 # android min sdk min:16, default 21
-  adaptive_icon_background: "#1E2228" # Popytka Dark Background
-  adaptive_icon_foreground: "android/app/src/main/res/mipmap-xxxhdpi/ic_launcher.png"
+  adaptive_icon_background: "#1E2228" # Dark background matching the theme
+  adaptive_icon_foreground: "assets/icons/cropped_app_icon.png"
