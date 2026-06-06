@@ -27,6 +27,7 @@ class UserRepository {
           if (user == null) return {};
           final json = user.toJson();
           json.remove('id');
+          json['cars'] = user.cars.map((car) => car.toJson()).toList();
           return json;
         },
       );
@@ -41,7 +42,9 @@ class UserRepository {
   }
 
   Future<void> updateUser(UserModel user) async {
-    await _usersRef.doc(user.id).update(user.toJson()..remove('id'));
+    final json = user.toJson()..remove('id');
+    json['cars'] = user.cars.map((car) => car.toJson()).toList();
+    await _usersRef.doc(user.id).update(json);
   }
 
   Future<void> updateUserData(String userId, Map<String, dynamic> data) async {
