@@ -10,6 +10,8 @@ import 'package:popytka_ua/data/repositories/rating_repository.dart';
 import 'package:popytka_ua/domain/models/rating_model.dart';
 import 'package:intl/intl.dart';
 import 'package:popytka_ua/data/providers/statistics_provider.dart';
+import 'dart:io' as io;
+import 'package:flutter/foundation.dart' show kIsWeb;
 
 class ProfileScreen extends ConsumerStatefulWidget {
   const ProfileScreen({super.key});
@@ -743,6 +745,12 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
                           ),
                         ),
                       ),
+                      IconButton(
+                        icon: Icon(Icons.edit, color: onSurface.withValues(alpha: 0.54), size: 20),
+                        onPressed: () {
+                          context.push('/edit_profile', extra: user);
+                        },
+                      ),
                     ],
                   ),
                   const SizedBox(height: 12),
@@ -777,17 +785,33 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
                       child: ListView.builder(
                         scrollDirection: Axis.horizontal,
                         itemCount: car.photos.length,
-                        itemBuilder: (context, index) => Container(
-                          width: 100,
-                          margin: const EdgeInsets.only(right: 10),
-                          decoration: BoxDecoration(
-                            borderRadius: BorderRadius.circular(12),
-                            image: DecorationImage(
-                              image: NetworkImage(car.photos[index]),
-                              fit: BoxFit.cover,
+                        itemBuilder: (context, photoIndex) {
+                          final path = car.photos[photoIndex];
+                          final isUrl = path.startsWith('http') || path.startsWith('https');
+                          return Container(
+                            width: 100,
+                            margin: const EdgeInsets.only(right: 10),
+                            decoration: BoxDecoration(
+                              borderRadius: BorderRadius.circular(12),
                             ),
-                          ),
-                        ),
+                            child: ClipRRect(
+                              borderRadius: BorderRadius.circular(12),
+                              child: kIsWeb || isUrl
+                                  ? Image.network(
+                                      path,
+                                      width: 100,
+                                      height: 80,
+                                      fit: BoxFit.cover,
+                                    )
+                                  : Image.file(
+                                      io.File(path),
+                                      width: 100,
+                                      height: 80,
+                                      fit: BoxFit.cover,
+                                    ),
+                            ),
+                          );
+                        },
                       ),
                     ),
                   ],

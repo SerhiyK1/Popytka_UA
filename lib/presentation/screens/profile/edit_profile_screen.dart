@@ -176,11 +176,13 @@ class _EditProfileScreenState extends ConsumerState<EditProfileScreen> {
     final plateCtrl = TextEditingController(text: existingCar?.plate ?? '');
     final colorCtrl = TextEditingController(text: existingCar?.color ?? '');
     final List<String> carPhotos = List.from(existingCar?.photos ?? []);
+    final theme = Theme.of(context);
+    final onSurface = theme.colorScheme.onSurface;
 
     showModalBottomSheet(
       context: context,
       isScrollControlled: true,
-      backgroundColor: AppColors.surface,
+      backgroundColor: theme.colorScheme.surface,
       shape: const RoundedRectangleBorder(
         borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
       ),
@@ -279,12 +281,12 @@ class _EditProfileScreenState extends ConsumerState<EditProfileScreen> {
                   Row(
                     mainAxisAlignment: MainAxisAlignment.spaceBetween,
                     children: [
-                      const Text(
+                      Text(
                         'Фото автомобіля (необов\'язково)',
                         style: TextStyle(
                           fontSize: 14,
                           fontWeight: FontWeight.bold,
-                          color: Colors.white70,
+                          color: onSurface.withValues(alpha: 0.7),
                         ),
                       ),
                       TextButton.icon(
@@ -395,6 +397,7 @@ class _EditProfileScreenState extends ConsumerState<EditProfileScreen> {
                           _cars.add(newCar);
                         }
                       });
+                      ref.read(userNotifierProvider.notifier).updateUserProfile(cars: _cars);
                       Navigator.pop(ctx);
                     },
                     style: ElevatedButton.styleFrom(
@@ -416,6 +419,8 @@ class _EditProfileScreenState extends ConsumerState<EditProfileScreen> {
   Widget build(BuildContext context) {
     final t = AppLocalizations.of(context)!;
     final isDriver = widget.user.role == 'driver';
+    final theme = Theme.of(context);
+    final onSurface = theme.colorScheme.onSurface;
 
     return Scaffold(
       appBar: AppBar(
@@ -485,19 +490,19 @@ class _EditProfileScreenState extends ConsumerState<EditProfileScreen> {
                 children: [
                   Text(
                     t.name_label,
-                    style: const TextStyle(
+                    style: TextStyle(
                       fontSize: 16,
                       fontWeight: FontWeight.bold,
-                      color: Colors.white70,
+                      color: onSurface.withValues(alpha: 0.7),
                     ),
                   ),
                   const SizedBox(height: 8),
                   TextField(
                     controller: _nameController,
-                    style: const TextStyle(color: Colors.white),
+                    style: TextStyle(color: onSurface),
                     decoration: InputDecoration(
                       filled: true,
-                      fillColor: Colors.white10,
+                      fillColor: onSurface.withValues(alpha: 0.05),
                       border: OutlineInputBorder(
                         borderRadius: BorderRadius.circular(12),
                         borderSide: BorderSide.none,
@@ -507,20 +512,20 @@ class _EditProfileScreenState extends ConsumerState<EditProfileScreen> {
                   const SizedBox(height: 16),
                   Text(
                     t.phone_number,
-                    style: const TextStyle(
+                    style: TextStyle(
                       fontSize: 16,
                       fontWeight: FontWeight.bold,
-                      color: Colors.white70,
+                      color: onSurface.withValues(alpha: 0.7),
                     ),
                   ),
                   const SizedBox(height: 8),
                   TextField(
                     enabled: false,
                     controller: TextEditingController(text: widget.user.phone),
-                    style: const TextStyle(color: Colors.white54),
+                    style: TextStyle(color: onSurface.withValues(alpha: 0.5)),
                     decoration: InputDecoration(
                       filled: true,
-                      fillColor: Colors.white.withValues(alpha: 0.05),
+                      fillColor: onSurface.withValues(alpha: 0.03),
                       border: OutlineInputBorder(
                         borderRadius: BorderRadius.circular(12),
                         borderSide: BorderSide.none,
@@ -553,12 +558,12 @@ class _EditProfileScreenState extends ConsumerState<EditProfileScreen> {
               ),
               const SizedBox(height: 8),
               if (_cars.isEmpty)
-                const Center(
+                Center(
                   child: Padding(
-                    padding: EdgeInsets.all(16.0),
+                    padding: const EdgeInsets.all(16.0),
                     child: Text(
                       'У вас поки немає авто',
-                      style: TextStyle(color: Colors.white54),
+                      style: TextStyle(color: onSurface.withValues(alpha: 0.5)),
                     ),
                   ),
                 ),
@@ -574,7 +579,7 @@ class _EditProfileScreenState extends ConsumerState<EditProfileScreen> {
                         width: 40,
                         height: 40,
                         decoration: BoxDecoration(
-                          color: AppColors.surface,
+                          color: onSurface.withValues(alpha: 0.05),
                           borderRadius: BorderRadius.circular(8),
                         ),
                         child: car.photos.isNotEmpty
@@ -606,15 +611,16 @@ class _EditProfileScreenState extends ConsumerState<EditProfileScreen> {
                           children: [
                             Text(
                               '${car.brand} ${car.model}',
-                              style: const TextStyle(
+                              style: TextStyle(
                                 fontWeight: FontWeight.bold,
                                 fontSize: 16,
+                                color: onSurface,
                               ),
                             ),
                             Text(
                               '${car.plate} • ${car.color} • ${car.year}',
-                              style: const TextStyle(
-                                color: Colors.white70,
+                              style: TextStyle(
+                                color: onSurface.withValues(alpha: 0.6),
                                 fontSize: 12,
                               ),
                             ),
@@ -623,10 +629,10 @@ class _EditProfileScreenState extends ConsumerState<EditProfileScreen> {
                       ),
                       IconButton(
                         onPressed: () => _showAddCarBottomSheet(car, index),
-                        icon: const Icon(
+                        icon: Icon(
                           Icons.edit,
                           size: 20,
-                          color: Colors.white54,
+                          color: onSurface.withValues(alpha: 0.6),
                         ),
                       ),
                       IconButton(
@@ -634,6 +640,7 @@ class _EditProfileScreenState extends ConsumerState<EditProfileScreen> {
                           setState(() {
                             _cars.removeAt(index);
                           });
+                          ref.read(userNotifierProvider.notifier).updateUserProfile(cars: _cars);
                         },
                         icon: const Icon(
                           Icons.delete,
@@ -658,21 +665,23 @@ class _EditProfileScreenState extends ConsumerState<EditProfileScreen> {
     TextEditingController controller, {
     FocusNode? focusNode,
   }) {
+    final theme = Theme.of(context);
+    final onSurface = theme.colorScheme.onSurface;
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
         Text(
           label,
-          style: const TextStyle(fontSize: 12, color: Colors.white70),
+          style: TextStyle(fontSize: 12, color: onSurface.withValues(alpha: 0.7)),
         ),
         const SizedBox(height: 4),
         TextField(
           controller: controller,
           focusNode: focusNode,
-          style: const TextStyle(color: Colors.white, fontSize: 14),
+          style: TextStyle(color: onSurface, fontSize: 14),
           decoration: InputDecoration(
             filled: true,
-            fillColor: Colors.white10,
+            fillColor: onSurface.withValues(alpha: 0.05),
             border: OutlineInputBorder(
               borderRadius: BorderRadius.circular(8),
               borderSide: BorderSide.none,
@@ -705,6 +714,8 @@ class _EditProfileScreenState extends ConsumerState<EditProfileScreen> {
         return _buildTextField(label, textEditingController, focusNode: fieldFocusNode);
       },
       optionsViewBuilder: (context, onSelected, options) {
+        final theme = Theme.of(context);
+        final onSurface = theme.colorScheme.onSurface;
         return Align(
           alignment: Alignment.topLeft,
           child: Material(
@@ -714,11 +725,17 @@ class _EditProfileScreenState extends ConsumerState<EditProfileScreen> {
               constraints: const BoxConstraints(maxHeight: 200),
               margin: const EdgeInsets.only(top: 4),
               decoration: BoxDecoration(
-                color: const Color(0xFF2A2F35),
+                color: theme.colorScheme.brightness == Brightness.dark
+                    ? const Color(0xFF2A2F35)
+                    : Colors.white,
                 borderRadius: BorderRadius.circular(8),
+                border: Border.all(
+                  color: onSurface.withValues(alpha: 0.1),
+                  width: 1,
+                ),
                 boxShadow: [
                   BoxShadow(
-                    color: Colors.black.withValues(alpha: 0.5),
+                    color: Colors.black.withValues(alpha: 0.2),
                     blurRadius: 8,
                     offset: const Offset(0, 4),
                   ),
@@ -736,12 +753,17 @@ class _EditProfileScreenState extends ConsumerState<EditProfileScreen> {
                       onTap: () => onSelected(option),
                       child: Container(
                         padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
-                        decoration: const BoxDecoration(
-                          border: Border(bottom: BorderSide(color: Colors.white10, width: 0.5)),
+                        decoration: BoxDecoration(
+                          border: Border(
+                            bottom: BorderSide(
+                              color: onSurface.withValues(alpha: 0.05),
+                              width: 0.5,
+                            ),
+                          ),
                         ),
                         child: Text(
                           option,
-                          style: const TextStyle(color: Colors.white, fontSize: 13),
+                          style: TextStyle(color: onSurface, fontSize: 13),
                         ),
                       ),
                     );
