@@ -22,7 +22,13 @@ class WalletRepository {
         .snapshots()
         .map((snapshot) {
       return snapshot.docs
-          .map((doc) => TransactionModel.fromJson({...doc.data(), 'id': doc.id}))
+          .map((doc) {
+            final data = Map<String, dynamic>.from(doc.data());
+            if (data['createdAt'] is Timestamp) {
+              data['createdAt'] = (data['createdAt'] as Timestamp).toDate().toIso8601String();
+            }
+            return TransactionModel.fromJson({...data, 'id': doc.id});
+          })
           .toList();
     });
   }

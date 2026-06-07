@@ -38,6 +38,9 @@ class _PublishRideScreenState extends ConsumerState<PublishRideScreen> {
   TimeOfDay? _selectedTime;
   String? _selectedCarId;
 
+  final List<TextEditingController> _waypointControllers = [];
+  final List<NominatimResult?> _waypointResults = [];
+
   TimeOfDay _roundTo5Minutes(TimeOfDay time) {
     final roundedMinute = (time.minute / 5).round() * 5;
     if (roundedMinute == 60) {
@@ -58,6 +61,17 @@ class _PublishRideScreenState extends ConsumerState<PublishRideScreen> {
       _selectedDate = ride.departureTime;
       _selectedTime = _roundTo5Minutes(TimeOfDay.fromDateTime(ride.departureTime));
       _selectedCarId = ride.carId;
+      
+      // Populate waypoints if editing
+      for (var wp in ride.waypoints) {
+        _waypointControllers.add(TextEditingController(text: wp.address));
+        _waypointResults.add(NominatimResult(
+          displayName: wp.address,
+          latitude: wp.latitude,
+          longitude: wp.longitude,
+          city: wp.city,
+        ));
+      }
     } else {
       // Set default date to tomorrow
       _selectedDate = DateTime.now().add(const Duration(days: 1));
@@ -295,6 +309,35 @@ class _PublishRideScreenState extends ConsumerState<PublishRideScreen> {
       return;
     }
 
+    // Validate waypoints
+    final List<LocationModel> waypoints = [];
+    final List<LatLng> waypointCoords = [];
+    for (int i = 0; i < _waypointControllers.length; i++) {
+      final text = _waypointControllers[i].text.trim();
+      if (text.isEmpty) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text("Будь ласка, заповніть або видаліть проміжну точку №${i + 1}")),
+        );
+        return;
+      }
+      
+      final result = _waypointResults[i];
+      if (result == null) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text("Будь ласка, виберіть адресу для проміжної точки №${i + 1} зі списку")),
+        );
+        return;
+      }
+      
+      waypoints.add(LocationModel(
+        city: result.city ?? text.split(',').first.trim(),
+        latitude: result.latitude,
+        longitude: result.longitude,
+        address: text,
+      ));
+      waypointCoords.add(LatLng(result.latitude, result.longitude));
+    }
+
     setState(() => _isLoading = true);
 
     try {
@@ -309,6 +352,7 @@ class _PublishRideScreenState extends ConsumerState<PublishRideScreen> {
       final routePoints = await ref.read(osrmRoutingServiceProvider).getRoute(
         LatLng(fromLat, fromLng),
         LatLng(toLat, toLng),
+        waypoints: waypointCoords,
       );
 
       final ride = RideModel(
@@ -329,6 +373,7 @@ class _PublishRideScreenState extends ConsumerState<PublishRideScreen> {
           longitude: toLng,
           address: _toController.text.trim(),
         ),
+        waypoints: waypoints,
         routePoints: routePoints,
         pricePerSeat: price,
         seatsAvailable: _seats,
@@ -355,6 +400,12 @@ class _PublishRideScreenState extends ConsumerState<PublishRideScreen> {
           _selectedTime = _roundTo5Minutes(TimeOfDay(hour: now.hour, minute: now.minute));
           _fromResult = null;
           _toResult = null;
+          
+          for (var c in _waypointControllers) {
+            c.dispose();
+          }
+          _waypointControllers.clear();
+          _waypointResults.clear();
         }
 
         ScaffoldMessenger.of(context).showSnackBar(
@@ -381,6 +432,9 @@ class _PublishRideScreenState extends ConsumerState<PublishRideScreen> {
     _fromController.dispose();
     _toController.dispose();
     _priceController.dispose();
+    for (var c in _waypointControllers) {
+      c.dispose();
+    }
     super.dispose();
   }
 
@@ -487,6 +541,73 @@ class _PublishRideScreenState extends ConsumerState<PublishRideScreen> {
               onAddressSelected: (result) {
                 setState(() => _fromResult = result);
               },
+            ),
+
+            const SizedBox(height: 16),
+
+            // Intermediate Waypoints List
+            if (_waypointControllers.isNotEmpty) ...[
+              for (int i = 0; i < _waypointControllers.length; i++) ...[
+                Row(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Expanded(
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          _buildSectionHeader("Зупинка ${i + 1}", onSurface),
+                          AddressAutocompleteField(
+                            hintText: "Зупинка ${i + 1}",
+                            icon: Icons.place,
+                            controller: _waypointControllers[i],
+                            filled: true,
+                            fillColor: onSurface.withValues(alpha: 0.05),
+                            onAddressSelected: (result) {
+                              setState(() {
+                                _waypointResults[i] = result;
+                              });
+                            },
+                          ),
+                        ],
+                      ),
+                    ),
+                    Padding(
+                      padding: const EdgeInsets.only(top: 28.0, left: 8.0),
+                      child: IconButton(
+                        icon: const Icon(Icons.delete_outline, color: Colors.redAccent),
+                        onPressed: () {
+                          setState(() {
+                            _waypointControllers[i].dispose();
+                            _waypointControllers.removeAt(i);
+                            _waypointResults.removeAt(i);
+                          });
+                        },
+                      ),
+                    ),
+                  ],
+                ),
+                const SizedBox(height: 16),
+              ],
+            ],
+
+            // Add waypoint button
+            OutlinedButton.icon(
+              onPressed: () {
+                setState(() {
+                  _waypointControllers.add(TextEditingController());
+                  _waypointResults.add(null);
+                });
+              },
+              style: OutlinedButton.styleFrom(
+                side: BorderSide(color: AppColors.secondary.withValues(alpha: 0.5)),
+                foregroundColor: AppColors.secondary,
+                shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(12),
+                ),
+                padding: const EdgeInsets.symmetric(vertical: 12),
+              ),
+              icon: const Icon(Icons.add_location_alt),
+              label: const Text("Додати проміжну точку (зупинку)"),
             ),
 
             const SizedBox(height: 16),

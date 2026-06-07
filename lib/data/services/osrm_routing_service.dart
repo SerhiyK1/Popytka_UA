@@ -16,9 +16,10 @@ OsrmRoutingService osrmRoutingService(Ref ref) {
 class OsrmRoutingService {
   static const String _baseUrl = 'http://router.project-osrm.org/route/v1/driving';
 
-  /// Fetches a list of LatLng points representing the road route between two locations.
-  Future<List<LatLng>> getRoute(LatLng start, LatLng end) async {
-    final String coordinates = '${start.longitude},${start.latitude};${end.longitude},${end.latitude}';
+  /// Fetches a list of LatLng points representing the road route between locations, including optional intermediate waypoints.
+  Future<List<LatLng>> getRoute(LatLng start, LatLng end, {List<LatLng> waypoints = const []}) async {
+    final List<LatLng> allPoints = [start, ...waypoints, end];
+    final String coordinates = allPoints.map((p) => '${p.longitude},${p.latitude}').join(';');
     final Uri uri = Uri.parse('$_baseUrl/$coordinates?overview=full&geometries=geojson');
 
     try {

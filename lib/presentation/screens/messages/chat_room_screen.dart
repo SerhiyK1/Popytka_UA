@@ -6,6 +6,7 @@ import 'package:popytka_ua/data/repositories/chat_repository.dart';
 import 'package:popytka_ua/data/repositories/auth_repository.dart';
 import 'package:popytka_ua/presentation/theme/app_colors.dart';
 import 'package:popytka_ua/domain/models/chat_model.dart';
+import 'package:popytka_ua/data/providers/user_provider.dart';
 
 // Part of Phase 7: Messaging
 class ChatRoomScreen extends ConsumerStatefulWidget {
@@ -40,8 +41,25 @@ class _ChatRoomScreenState extends ConsumerState<ChatRoomScreen> {
         .watch(chatRepositoryProvider)
         .getMessages(widget.chat.id);
 
+    final otherId = widget.chat.participantIds.firstWhere(
+      (id) => id != user?.uid,
+      orElse: () => "Unknown",
+    );
+
     return Scaffold(
-      appBar: AppBar(title: Text("Chat"), centerTitle: true),
+      appBar: AppBar(
+        title: Consumer(
+          builder: (context, ref, child) {
+            final otherUserAsync = ref.watch(userByIdProvider(otherId));
+            return otherUserAsync.when(
+              data: (otherUser) => Text(otherUser?.name ?? "Чат"),
+              loading: () => const Text("Завантаження..."),
+              error: (_, __) => const Text("Чат"),
+            );
+          },
+        ),
+        centerTitle: true,
+      ),
       body: Column(
         children: [
           Expanded(
@@ -70,22 +88,22 @@ class _ChatRoomScreenState extends ConsumerState<ChatRoomScreen> {
           // Input Area
           Container(
             padding: const EdgeInsets.all(8),
-            decoration: const BoxDecoration(
-              color: AppColors.cardSurface,
-              border: Border(top: BorderSide(color: Colors.white10)),
+            decoration: BoxDecoration(
+              color: Theme.of(context).colorScheme.surface,
+              border: Border(top: BorderSide(color: Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.1))),
             ),
             child: Row(
               children: [
                 Expanded(
                   child: TextField(
                     controller: _controller,
-                    style: const TextStyle(color: Colors.white),
+                    style: TextStyle(color: Theme.of(context).colorScheme.onSurface),
                     decoration: InputDecoration(
                       hintText: t.type_message,
-                      hintStyle: const TextStyle(color: Colors.white38),
+                      hintStyle: TextStyle(color: Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.4)),
                       border: InputBorder.none,
                       filled: true,
-                      fillColor: Colors.black26,
+                      fillColor: Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.05),
                       contentPadding: const EdgeInsets.symmetric(
                         horizontal: 16,
                         vertical: 8,
@@ -115,6 +133,12 @@ class _MessageBubble extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    final onSurface = theme.colorScheme.onSurface;
+
+    final bubbleTextColor = isMe ? Colors.black : onSurface;
+    final bubbleTimeColor = isMe ? Colors.black54 : onSurface.withValues(alpha: 0.5);
+
     return Align(
       alignment: isMe ? Alignment.centerRight : Alignment.centerLeft,
       child: Container(
@@ -137,12 +161,12 @@ class _MessageBubble extends StatelessWidget {
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.end,
           children: [
-            Text(message.text, style: const TextStyle(color: Colors.white)),
+            Text(message.text, style: TextStyle(color: bubbleTextColor)),
             const SizedBox(height: 2),
             Text(
               DateFormat('HH:mm').format(message.createdAt),
               style: TextStyle(
-                color: Colors.white.withValues(alpha: 0.5),
+                color: bubbleTimeColor,
                 fontSize: 10,
               ),
             ),

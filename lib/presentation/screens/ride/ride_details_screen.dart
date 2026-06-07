@@ -5,9 +5,13 @@ import 'package:popytka_ua/l10n/app_localizations.dart';
 import 'package:popytka_ua/presentation/theme/app_colors.dart';
 import 'package:popytka_ua/presentation/widgets/surface_card.dart';
 import 'package:popytka_ua/domain/models/ride_model.dart';
+import 'package:popytka_ua/domain/models/booking_model.dart';
+import 'package:popytka_ua/domain/models/chat_model.dart';
 import 'package:popytka_ua/data/repositories/booking_repository.dart';
 import 'package:popytka_ua/data/repositories/auth_repository.dart';
 import 'package:popytka_ua/data/repositories/ride_repository.dart';
+import 'package:popytka_ua/data/repositories/chat_repository.dart';
+import 'package:popytka_ua/data/providers/user_provider.dart';
 import 'package:popytka_ua/data/services/osrm_routing_service.dart';
 import 'package:flutter_map/flutter_map.dart';
 import 'package:flutter_map_animations/flutter_map_animations.dart';
@@ -52,7 +56,11 @@ class _RideDetailsScreenState extends ConsumerState<RideDetailsScreen> with Tick
     final start = LatLng(widget.ride.fromLocation.latitude, widget.ride.fromLocation.longitude);
     final end = LatLng(widget.ride.toLocation.latitude, widget.ride.toLocation.longitude);
     
-    final points = await ref.read(osrmRoutingServiceProvider).getRoute(start, end);
+    final points = await ref.read(osrmRoutingServiceProvider).getRoute(
+      start,
+      end,
+      waypoints: widget.ride.waypoints.map((w) => LatLng(w.latitude, w.longitude)).toList(),
+    );
     
     if (mounted) {
       setState(() {
@@ -219,9 +227,27 @@ class _RideDetailsScreenState extends ConsumerState<RideDetailsScreen> with Tick
                   ),
                 ],
               ),
-              MarkerLayer(
+               MarkerLayer(
                 markers: [
                   _buildPulsingMarker(fromLatLng.latitude, fromLatLng.longitude, isOrigin: true),
+                  for (var wp in ride.waypoints)
+                    Marker(
+                      point: LatLng(wp.latitude, wp.longitude),
+                      width: 30,
+                      height: 30,
+                      child: Container(
+                        decoration: BoxDecoration(
+                          shape: BoxShape.circle,
+                          color: AppColors.secondary.withValues(alpha: 0.8),
+                          border: Border.all(color: Colors.white, width: 2),
+                        ),
+                        child: const Icon(
+                          Icons.place,
+                          size: 14,
+                          color: Colors.white,
+                        ),
+                      ),
+                    ),
                   _buildPulsingMarker(toLatLng.latitude, toLatLng.longitude, isOrigin: false),
                 ],
               ),
@@ -287,10 +313,12 @@ class _RideDetailsScreenState extends ConsumerState<RideDetailsScreen> with Tick
                             child: Column(
                               crossAxisAlignment: CrossAxisAlignment.start,
                               children: [
-                                Text(
-                                  "${ride.fromLocation.city} -> ${ride.toLocation.city}",
+                                 Text(
+                                  ride.waypoints.isEmpty
+                                      ? "${ride.fromLocation.city} -> ${ride.toLocation.city}"
+                                      : "${ride.fromLocation.city} -> ${ride.waypoints.map((w) => w.city).join(' -> ')} -> ${ride.toLocation.city}",
                                   style: TextStyle(
-                                    fontSize: 20,
+                                    fontSize: 18,
                                     fontWeight: FontWeight.bold,
                                     color: onSurface,
                                   ),
@@ -300,6 +328,24 @@ class _RideDetailsScreenState extends ConsumerState<RideDetailsScreen> with Tick
                                   style: TextStyle(
                                     color: onSurface.withValues(alpha: 0.6),
                                   ),
+                                ),
+                                const SizedBox(height: 4),
+                                Row(
+                                  children: [
+                                    const Icon(
+                                      Icons.event_seat,
+                                      color: AppColors.secondary,
+                                      size: 16,
+                                    ),
+                                    const SizedBox(width: 6),
+                                    Text(
+                                      "Вільних місць: ${ride.seatsAvailable}",
+                                      style: TextStyle(
+                                        color: onSurface.withValues(alpha: 0.8),
+                                        fontSize: 13,
+                                      ),
+                                    ),
+                                  ],
                                 ),
                               ],
                             ),
@@ -368,48 +414,338 @@ class _RideDetailsScreenState extends ConsumerState<RideDetailsScreen> with Tick
                         ],
                       ),
                       const SizedBox(height: 16),
-                      SurfaceCard(
-                        padding: const EdgeInsets.all(12),
-                        color: onSurface.withValues(alpha: 0.05),
-                        child: Row(
-                          children: [
-                            CircleAvatar(
-                              backgroundColor: AppColors.secondary.withValues(alpha: 0.2),
-                              child: const Icon(Icons.person, color: AppColors.secondary),
-                            ),
-                            const SizedBox(width: 12),
-                            Column(
-                              crossAxisAlignment: CrossAxisAlignment.start,
-                              children: [
-                                Text(
-                                  t.driver_info,
-                                  style: TextStyle(
-                                    fontSize: 12,
-                                    color: onSurface.withValues(alpha: 0.6),
+                      // Driver Info
+                      Consumer(
+                        builder: (context, ref, child) {
+                          final driverId = ride.driverId ?? ride.riderId;
+                          final driverAsync = ref.watch(userByIdProvider(driverId));
+
+                          return driverAsync.when(
+                            data: (driver) {
+                              if (driver == null) {
+                                return const SizedBox.shrink();
+                              }
+
+                              // Find the specific car assigned to the ride
+                              final car = driver.cars.isEmpty
+                                  ? null
+                                  : (driver.cars.firstWhere(
+                                      (c) => c.id == ride.carId,
+                                      orElse: () => driver.cars.first,
+                                    ));
+
+                              return Column(
+                                crossAxisAlignment: CrossAxisAlignment.start,
+                                children: [
+                                  SurfaceCard(
+                                    padding: const EdgeInsets.all(12),
+                                    color: onSurface.withValues(alpha: 0.05),
+                                    child: Row(
+                                      children: [
+                                        CircleAvatar(
+                                          backgroundColor: AppColors.secondary.withValues(alpha: 0.2),
+                                          backgroundImage: driver.photoUrl != null
+                                              ? NetworkImage(driver.photoUrl!)
+                                              : null,
+                                          child: driver.photoUrl == null
+                                              ? const Icon(Icons.person, color: AppColors.secondary)
+                                              : null,
+                                        ),
+                                        const SizedBox(width: 12),
+                                        Expanded(
+                                          child: Column(
+                                            crossAxisAlignment: CrossAxisAlignment.start,
+                                            children: [
+                                              Text(
+                                                t.driver_info,
+                                                style: TextStyle(
+                                                  fontSize: 12,
+                                                  color: onSurface.withValues(alpha: 0.6),
+                                                ),
+                                              ),
+                                              Text(
+                                                isOwner ? t.you_label : driver.name,
+                                                style: TextStyle(
+                                                  fontWeight: FontWeight.bold,
+                                                  color: onSurface,
+                                                  fontSize: 16,
+                                                ),
+                                              ),
+                                            ],
+                                          ),
+                                        ),
+                                        const Icon(
+                                          Icons.star,
+                                          color: Colors.amber,
+                                          size: 16,
+                                        ),
+                                        const SizedBox(width: 4),
+                                        Text(
+                                          driver.numberOfRatings > 0
+                                              ? driver.averageRating.toStringAsFixed(1)
+                                              : "5.0",
+                                          style: TextStyle(color: onSurface),
+                                        ),
+                                        if (!isOwner) ...[
+                                          const SizedBox(width: 8),
+                                          IconButton(
+                                            icon: const Icon(Icons.chat_bubble_outline, color: AppColors.primary),
+                                            onPressed: () async {
+                                              final currentUserId = ref.read(authRepositoryProvider).currentUser?.uid;
+                                              if (currentUserId == null) {
+                                                context.push('/login');
+                                                return;
+                                              }
+                                              
+                                              try {
+                                                showDialog(
+                                                  context: context,
+                                                  barrierDismissible: false,
+                                                  builder: (context) => const Center(
+                                                    child: CircularProgressIndicator(),
+                                                  ),
+                                                );
+                                                
+                                                final chatId = await ref.read(chatRepositoryProvider).createChat(currentUserId, driverId);
+                                                
+                                                if (context.mounted) {
+                                                  Navigator.of(context).pop(); // Close loading dialog
+                                                }
+                                                
+                                                final sortedIds = [currentUserId, driverId]..sort();
+                                                final chat = ChatModel(
+                                                  id: chatId,
+                                                  participantIds: sortedIds,
+                                                  lastMessageTime: DateTime.now(),
+                                                );
+                                                
+                                                if (context.mounted) {
+                                                  context.push('/chat_room', extra: chat);
+                                                }
+                                              } catch (e) {
+                                                if (context.mounted) {
+                                                  Navigator.of(context).pop(); // Close loading dialog
+                                                  ScaffoldMessenger.of(context).showSnackBar(
+                                                    SnackBar(content: Text("Помилка створення чату: $e")),
+                                                  );
+                                                }
+                                              }
+                                            },
+                                          ),
+                                        ],
+                                      ],
+                                    ),
                                   ),
-                                ),
-                                Text(
-                                  isOwner ? t.you_label : t.driver_placeholder,
-                                  style: TextStyle(
-                                    fontWeight: FontWeight.bold,
-                                    color: onSurface,
-                                  ),
-                                ),
-                              ],
+                                  if (car != null) ...[
+                                    const SizedBox(height: 8),
+                                    SurfaceCard(
+                                      padding: const EdgeInsets.all(12),
+                                      color: onSurface.withValues(alpha: 0.03),
+                                      child: Row(
+                                        children: [
+                                          const Icon(
+                                            Icons.directions_car,
+                                            color: AppColors.primary,
+                                            size: 20,
+                                          ),
+                                          const SizedBox(width: 12),
+                                          Expanded(
+                                            child: Column(
+                                              crossAxisAlignment: CrossAxisAlignment.start,
+                                              children: [
+                                                Text(
+                                                  "Автомобіль",
+                                                  style: TextStyle(
+                                                    fontSize: 11,
+                                                    color: onSurface.withValues(alpha: 0.5),
+                                                  ),
+                                                ),
+                                                Text(
+                                                  "${car.brand} ${car.model}",
+                                                  style: TextStyle(
+                                                    fontWeight: FontWeight.bold,
+                                                    color: onSurface,
+                                                    fontSize: 14,
+                                                  ),
+                                                ),
+                                                Text(
+                                                  "${car.color} • ${car.plate} • ${car.year} р.",
+                                                  style: TextStyle(
+                                                    color: onSurface.withValues(alpha: 0.6),
+                                                    fontSize: 12,
+                                                  ),
+                                                ),
+                                              ],
+                                            ),
+                                          ),
+                                        ],
+                                      ),
+                                    ),
+                                  ],
+                                ],
+                              );
+                            },
+                            loading: () => const Center(
+                              child: Padding(
+                                padding: EdgeInsets.all(16.0),
+                                child: CircularProgressIndicator(strokeWidth: 2),
+                              ),
                             ),
-                            const Spacer(),
-                            const Icon(
-                              Icons.star,
-                              color: Colors.amber,
-                              size: 16,
-                            ),
-                            const SizedBox(width: 4),
-                            Text(
-                              "4.9",
-                              style: TextStyle(color: onSurface),
-                            ),
-                          ],
+                            error: (e, _) => Center(child: Text("Помилка завантаження водія: $e")),
+                          );
+                        },
+                      ),
+
+                      const SizedBox(height: 16),
+                      Text(
+                        "Пасажири поїздки",
+                        style: TextStyle(
+                          fontSize: 16,
+                          fontWeight: FontWeight.bold,
+                          color: onSurface,
                         ),
+                      ),
+                      const SizedBox(height: 8),
+                      StreamBuilder<List<BookingModel>>(
+                        stream: ref.read(bookingRepositoryProvider).getRideBookings(ride.id),
+                        builder: (context, snapshot) {
+                          if (snapshot.connectionState == ConnectionState.waiting) {
+                            return const Center(child: CircularProgressIndicator(strokeWidth: 2));
+                          }
+                          if (snapshot.hasError) {
+                            return Text("Помилка: ${snapshot.error}");
+                          }
+                          final bookings = snapshot.data ?? [];
+                          if (bookings.isEmpty) {
+                            return Padding(
+                              padding: const EdgeInsets.symmetric(vertical: 8.0),
+                              child: Text(
+                                "Пасажири ще не долучилися",
+                                style: TextStyle(
+                                  color: onSurface.withValues(alpha: 0.5),
+                                  fontStyle: FontStyle.italic,
+                                  fontSize: 13,
+                                ),
+                              ),
+                            );
+                          }
+
+                          return ListView.builder(
+                            shrinkWrap: true,
+                            physics: const NeverScrollableScrollPhysics(),
+                            padding: EdgeInsets.zero,
+                            itemCount: bookings.length,
+                            itemBuilder: (context, index) {
+                              final booking = bookings[index];
+                              return Consumer(
+                                builder: (context, ref, child) {
+                                  final userAsync = ref.watch(userByIdProvider(booking.userId));
+                                  return userAsync.when(
+                                    data: (passenger) {
+                                      if (passenger == null) return const SizedBox.shrink();
+                                      return Padding(
+                                        padding: const EdgeInsets.only(bottom: 8.0),
+                                        child: SurfaceCard(
+                                          padding: const EdgeInsets.all(8),
+                                          color: onSurface.withValues(alpha: 0.02),
+                                          child: Row(
+                                            children: [
+                                              CircleAvatar(
+                                                radius: 16,
+                                                backgroundColor: AppColors.secondary.withValues(alpha: 0.1),
+                                                backgroundImage: passenger.photoUrl != null
+                                                    ? NetworkImage(passenger.photoUrl!)
+                                                    : null,
+                                                child: passenger.photoUrl == null
+                                                    ? const Icon(Icons.person, size: 16, color: AppColors.secondary)
+                                                    : null,
+                                              ),
+                                              const SizedBox(width: 12),
+                                              Expanded(
+                                                child: Text(
+                                                  passenger.name,
+                                                  style: TextStyle(
+                                                    color: onSurface,
+                                                    fontWeight: FontWeight.w500,
+                                                    fontSize: 14,
+                                                  ),
+                                                ),
+                                              ),
+                                              if (isOwner) ...[
+                                                IconButton(
+                                                  icon: const Icon(Icons.chat_bubble_outline, size: 18, color: AppColors.primary),
+                                                  onPressed: () async {
+                                                    final currentUserId = ref.read(authRepositoryProvider).currentUser?.uid;
+                                                    if (currentUserId == null) return;
+                                                    
+                                                    try {
+                                                      showDialog(
+                                                        context: context,
+                                                        barrierDismissible: false,
+                                                        builder: (context) => const Center(
+                                                          child: CircularProgressIndicator(),
+                                                        ),
+                                                      );
+                                                      
+                                                      final chatId = await ref.read(chatRepositoryProvider).createChat(currentUserId, passenger.id);
+                                                      
+                                                      if (context.mounted) {
+                                                        Navigator.of(context).pop(); // Close loading dialog
+                                                      }
+                                                      
+                                                      final sortedIds = [currentUserId, passenger.id]..sort();
+                                                      final chat = ChatModel(
+                                                        id: chatId,
+                                                        participantIds: sortedIds,
+                                                        lastMessageTime: DateTime.now(),
+                                                      );
+                                                      
+                                                      if (context.mounted) {
+                                                        context.push('/chat_room', extra: chat);
+                                                      }
+                                                    } catch (e) {
+                                                      if (context.mounted) {
+                                                        Navigator.of(context).pop(); // Close loading dialog
+                                                        ScaffoldMessenger.of(context).showSnackBar(
+                                                          SnackBar(content: Text("Помилка створення чату: $e")),
+                                                        );
+                                                      }
+                                                    }
+                                                  },
+                                                ),
+                                                const SizedBox(width: 8),
+                                              ],
+                                              Container(
+                                                padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                                                decoration: BoxDecoration(
+                                                  color: AppColors.primary.withValues(alpha: 0.2),
+                                                  borderRadius: BorderRadius.circular(12),
+                                                ),
+                                                child: Text(
+                                                  "${booking.seats} місць",
+                                                  style: const TextStyle(
+                                                    color: AppColors.primary,
+                                                    fontSize: 11,
+                                                    fontWeight: FontWeight.bold,
+                                                  ),
+                                                ),
+                                              ),
+                                            ],
+                                          ),
+                                        ),
+                                      );
+                                    },
+                                    loading: () => const SizedBox(
+                                      height: 40,
+                                      child: Center(child: SizedBox(width: 16, height: 16, child: CircularProgressIndicator(strokeWidth: 1.5))),
+                                    ),
+                                    error: (e, _) => Text("Помилка: $e"),
+                                  );
+                                },
+                              );
+                            },
+                          );
+                        },
                       ),
                       const SizedBox(height: 24),
                       SizedBox(

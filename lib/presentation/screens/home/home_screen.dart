@@ -215,47 +215,37 @@ class _HomeScreenState extends ConsumerState<HomeScreen>
               StreamBuilder<List<RideModel>>(
                 stream: ref.watch(rideRepositoryProvider).streamRides(),
                 builder: (context, snapshot) {
-                  // Case 1: Search in progress (even if only one field is filled)
-                  // We hide other rides to focus on user's current intent
-                  final isUserTyping = _fromController.text.isNotEmpty || _toController.text.isNotEmpty;
+                  // Show current search route if coordinates are set
+                  final hasSearchRoute = _fromLatLng != null && _toLatLng != null && _activeRoutePoints.isNotEmpty;
                   
-                  if (isUserTyping) {
-                    if (_fromLatLng != null && _toLatLng != null && _activeRoutePoints.isNotEmpty) {
-                      return Stack(
-                        children: [
-                          PolylineLayer(
-                            polylines: [
-                              Polyline(
-                                points: _activeRoutePoints,
-                                color: AppColors.primary,
-                                strokeWidth: 5.0,
-                              ),
-                            ],
-                          ),
-                          MarkerLayer(
-                            markers: [
-                              _buildPulsingMarker(_fromLatLng!.latitude, _fromLatLng!.longitude, isOrigin: true),
-                              _buildPulsingMarker(_toLatLng!.latitude, _toLatLng!.longitude, isOrigin: false),
-                            ],
-                          ),
-                        ],
-                      );
-                    }
-                    // Show only single markers if search is incomplete
-                    return MarkerLayer(
-                      markers: [
-                        if (_fromLatLng != null) _buildPulsingMarker(_fromLatLng!.latitude, _fromLatLng!.longitude, isOrigin: true),
-                        if (_toLatLng != null) _buildPulsingMarker(_toLatLng!.latitude, _toLatLng!.longitude, isOrigin: false),
+                  final searchMarkers = [
+                    if (_fromLatLng != null) _buildPulsingMarker(_fromLatLng!.latitude, _fromLatLng!.longitude, isOrigin: true),
+                    if (_toLatLng != null) _buildPulsingMarker(_toLatLng!.latitude, _toLatLng!.longitude, isOrigin: false),
+                  ];
+
+                  if (hasSearchRoute) {
+                    return Stack(
+                      children: [
+                        PolylineLayer(
+                          polylines: [
+                            Polyline(
+                              points: _activeRoutePoints,
+                              color: AppColors.primary,
+                              strokeWidth: 5.0,
+                            ),
+                          ],
+                        ),
+                        MarkerLayer(markers: searchMarkers),
                       ],
                     );
                   }
 
-                  // Case 2: No active search, show all available rides using real road points
-                  if (!snapshot.hasData) return const SizedBox.shrink();
+                  // Always show available rides unless we have a full active search route
+                  if (!snapshot.hasData) return MarkerLayer(markers: searchMarkers);
                   final rides = snapshot.data!;
 
                   final polylines = <Polyline>[];
-                  final markers = <Marker>[];
+                  final markers = <Marker>[...searchMarkers];
 
                   for (final ride in rides) {
                     // Use stored road geometry if available, fallback to straight line

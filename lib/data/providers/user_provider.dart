@@ -53,3 +53,8 @@ class UserNotifier extends _$UserNotifier {
     await ref.read(userRepositoryProvider).updateUser(updatedUser);
   }
 }
+
+@riverpod
+Stream<UserModel?> userById(Ref ref, String uid) {
+  return ref.watch(userRepositoryProvider).streamUser(uid);
+}

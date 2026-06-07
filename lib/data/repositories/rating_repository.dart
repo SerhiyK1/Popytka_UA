@@ -21,7 +21,10 @@ class RatingRepository {
       .collection('ratings')
       .withConverter(
         fromFirestore: (doc, _) {
-          final data = doc.data()!;
+          final data = Map<String, dynamic>.from(doc.data()!);
+          if (data['createdAt'] is Timestamp) {
+            data['createdAt'] = (data['createdAt'] as Timestamp).toDate().toIso8601String();
+          }
           return RatingModel.fromJson({...data, 'id': doc.id});
         },
         toFirestore: (rating, _) => rating.toJson(),

@@ -64,8 +64,36 @@ class BookingRepository {
         .snapshots()
         .map(
           (snapshot) => snapshot.docs
-              .map((doc) => BookingModel.fromJson(doc.data()))
+              .map((doc) {
+                final data = Map<String, dynamic>.from(doc.data());
+                if (data['createdAt'] is Timestamp) {
+                  data['createdAt'] = (data['createdAt'] as Timestamp).toDate().toIso8601String();
+                }
+                return BookingModel.fromJson(data);
+              })
               .toList(),
+        );
+  }
+
+  Stream<List<BookingModel>> getRideBookings(String rideId) {
+    return _firestore
+        .collection('bookings')
+        .where('rideId', isEqualTo: rideId)
+        .snapshots()
+        .map(
+          (snapshot) {
+            final list = snapshot.docs
+                .map((doc) {
+                  final data = Map<String, dynamic>.from(doc.data());
+                  if (data['createdAt'] is Timestamp) {
+                    data['createdAt'] = (data['createdAt'] as Timestamp).toDate().toIso8601String();
+                  }
+                  return BookingModel.fromJson(data);
+                })
+                .toList();
+            list.sort((a, b) => b.createdAt.compareTo(a.createdAt));
+            return list;
+          },
         );
   }
 }

@@ -4,6 +4,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:latlong2/latlong.dart';
 import 'package:riverpod_annotation/riverpod_annotation.dart';
 import '../../domain/models/ride_model.dart';
+import '../../domain/models/location_model.dart';
 
 part 'ride_repository.g.dart';
 
@@ -21,18 +22,32 @@ class RideRepository {
       .collection('rides')
       .withConverter(
         fromFirestore: (doc, _) {
-          final data = doc.data()!;
+          final data = Map<String, dynamic>.from(doc.data()!);
+          if (data['departureTime'] is Timestamp) {
+            data['departureTime'] = (data['departureTime'] as Timestamp).toDate().toIso8601String();
+          }
+          if (data['createdAt'] is Timestamp) {
+            data['createdAt'] = (data['createdAt'] as Timestamp).toDate().toIso8601String();
+          }
+          
           // Convert Firestore List of Maps back to List<LatLng>
           final List<dynamic>? routePointsJson = data['routePoints'];
           final List<LatLng> routePoints = routePointsJson != null
               ? routePointsJson.map((p) => LatLng(p['lat'], p['lng'])).toList()
               : [];
           
+          // Convert Firestore List of Maps back to List<LocationModel>
+          final List<dynamic>? waypointsJson = data['waypoints'];
+          final List<LocationModel> waypoints = waypointsJson != null
+              ? waypointsJson.map((w) => LocationModel.fromJson(Map<String, dynamic>.from(w as Map))).toList()
+              : [];
+          
           return RideModel.fromJson({
             ...data, 
             'id': doc.id,
             'routePoints': [], // temporary, will be set via copyWith below
-          }).copyWith(routePoints: routePoints);
+            'waypoints': [], // temporary
+          }).copyWith(routePoints: routePoints, waypoints: waypoints);
         },
         toFirestore: (ride, _) {
           final json = <String, dynamic>{
@@ -40,6 +55,7 @@ class RideRepository {
             'driverId': ride.driverId,
             'fromLocation': ride.fromLocation.toJson(),
             'toLocation': ride.toLocation.toJson(),
+            'waypoints': ride.waypoints.map((w) => w.toJson()).toList(),
             'routePoints': ride.routePoints.map((p) => {'lat': p.latitude, 'lng': p.longitude}).toList(),
             'status': ride.status,
             'pricePerSeat': ride.pricePerSeat,

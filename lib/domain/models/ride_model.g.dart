@@ -18,6 +18,11 @@ _$RideModelImpl _$$RideModelImplFromJson(Map<String, dynamic> json) =>
       toLocation: LocationModel.fromJson(
         json['toLocation'] as Map<String, dynamic>,
       ),
+      waypoints:
+          (json['waypoints'] as List<dynamic>?)
+              ?.map((e) => LocationModel.fromJson(e as Map<String, dynamic>))
+              .toList() ??
+          const [],
       routePoints:
           (json['routePoints'] as List<dynamic>?)
               ?.map((e) => LatLng.fromJson(e as Map<String, dynamic>))
@@ -38,6 +43,7 @@ Map<String, dynamic> _$$RideModelImplToJson(_$RideModelImpl instance) =>
       'carId': instance.carId,
       'fromLocation': instance.fromLocation,
       'toLocation': instance.toLocation,
+      'waypoints': instance.waypoints,
       'routePoints': instance.routePoints,
       'status': instance.status,
       'pricePerSeat': instance.pricePerSeat,

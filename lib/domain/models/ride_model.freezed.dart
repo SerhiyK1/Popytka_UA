@@ -27,6 +27,7 @@ mixin _$RideModel {
   String? get carId => throw _privateConstructorUsedError;
   LocationModel get fromLocation => throw _privateConstructorUsedError;
   LocationModel get toLocation => throw _privateConstructorUsedError;
+  List<LocationModel> get waypoints => throw _privateConstructorUsedError;
   List<LatLng> get routePoints =>
       throw _privateConstructorUsedError; // Full road geometry
   String get status => throw _privateConstructorUsedError;
@@ -57,6 +58,7 @@ abstract class $RideModelCopyWith<$Res> {
     String? carId,
     LocationModel fromLocation,
     LocationModel toLocation,
+    List<LocationModel> waypoints,
     List<LatLng> routePoints,
     String status,
     double pricePerSeat,
@@ -90,6 +92,7 @@ class _$RideModelCopyWithImpl<$Res, $Val extends RideModel>
     Object? carId = freezed,
     Object? fromLocation = null,
     Object? toLocation = null,
+    Object? waypoints = null,
     Object? routePoints = null,
     Object? status = null,
     Object? pricePerSeat = null,
@@ -123,6 +126,10 @@ class _$RideModelCopyWithImpl<$Res, $Val extends RideModel>
                 ? _value.toLocation
                 : toLocation // ignore: cast_nullable_to_non_nullable
                       as LocationModel,
+            waypoints: null == waypoints
+                ? _value.waypoints
+                : waypoints // ignore: cast_nullable_to_non_nullable
+                      as List<LocationModel>,
             routePoints: null == routePoints
                 ? _value.routePoints
                 : routePoints // ignore: cast_nullable_to_non_nullable
@@ -189,6 +196,7 @@ abstract class _$$RideModelImplCopyWith<$Res>
     String? carId,
     LocationModel fromLocation,
     LocationModel toLocation,
+    List<LocationModel> waypoints,
     List<LatLng> routePoints,
     String status,
     double pricePerSeat,
@@ -223,6 +231,7 @@ class __$$RideModelImplCopyWithImpl<$Res>
     Object? carId = freezed,
     Object? fromLocation = null,
     Object? toLocation = null,
+    Object? waypoints = null,
     Object? routePoints = null,
     Object? status = null,
     Object? pricePerSeat = null,
@@ -256,6 +265,10 @@ class __$$RideModelImplCopyWithImpl<$Res>
             ? _value.toLocation
             : toLocation // ignore: cast_nullable_to_non_nullable
                   as LocationModel,
+        waypoints: null == waypoints
+            ? _value._waypoints
+            : waypoints // ignore: cast_nullable_to_non_nullable
+                  as List<LocationModel>,
         routePoints: null == routePoints
             ? _value._routePoints
             : routePoints // ignore: cast_nullable_to_non_nullable
@@ -295,13 +308,15 @@ class _$RideModelImpl with DiagnosticableTreeMixin implements _RideModel {
     this.carId,
     required this.fromLocation,
     required this.toLocation,
+    final List<LocationModel> waypoints = const [],
     final List<LatLng> routePoints = const [],
     this.status = 'pending',
     required this.pricePerSeat,
     required this.seatsAvailable,
     required this.departureTime,
     required this.createdAt,
-  }) : _routePoints = routePoints;
+  }) : _waypoints = waypoints,
+       _routePoints = routePoints;
 
   factory _$RideModelImpl.fromJson(Map<String, dynamic> json) =>
       _$$RideModelImplFromJson(json);
@@ -318,6 +333,15 @@ class _$RideModelImpl with DiagnosticableTreeMixin implements _RideModel {
   final LocationModel fromLocation;
   @override
   final LocationModel toLocation;
+  final List<LocationModel> _waypoints;
+  @override
+  @JsonKey()
+  List<LocationModel> get waypoints {
+    if (_waypoints is EqualUnmodifiableListView) return _waypoints;
+    // ignore: implicit_dynamic_type
+    return EqualUnmodifiableListView(_waypoints);
+  }
+
   final List<LatLng> _routePoints;
   @override
   @JsonKey()
@@ -342,7 +366,7 @@ class _$RideModelImpl with DiagnosticableTreeMixin implements _RideModel {
 
   @override
   String toString({DiagnosticLevel minLevel = DiagnosticLevel.info}) {
-    return 'RideModel(id: $id, riderId: $riderId, driverId: $driverId, carId: $carId, fromLocation: $fromLocation, toLocation: $toLocation, routePoints: $routePoints, status: $status, pricePerSeat: $pricePerSeat, seatsAvailable: $seatsAvailable, departureTime: $departureTime, createdAt: $createdAt)';
+    return 'RideModel(id: $id, riderId: $riderId, driverId: $driverId, carId: $carId, fromLocation: $fromLocation, toLocation: $toLocation, waypoints: $waypoints, routePoints: $routePoints, status: $status, pricePerSeat: $pricePerSeat, seatsAvailable: $seatsAvailable, departureTime: $departureTime, createdAt: $createdAt)';
   }
 
   @override
@@ -356,6 +380,7 @@ class _$RideModelImpl with DiagnosticableTreeMixin implements _RideModel {
       ..add(DiagnosticsProperty('carId', carId))
       ..add(DiagnosticsProperty('fromLocation', fromLocation))
       ..add(DiagnosticsProperty('toLocation', toLocation))
+      ..add(DiagnosticsProperty('waypoints', waypoints))
       ..add(DiagnosticsProperty('routePoints', routePoints))
       ..add(DiagnosticsProperty('status', status))
       ..add(DiagnosticsProperty('pricePerSeat', pricePerSeat))
@@ -378,6 +403,10 @@ class _$RideModelImpl with DiagnosticableTreeMixin implements _RideModel {
                 other.fromLocation == fromLocation) &&
             (identical(other.toLocation, toLocation) ||
                 other.toLocation == toLocation) &&
+            const DeepCollectionEquality().equals(
+              other._waypoints,
+              _waypoints,
+            ) &&
             const DeepCollectionEquality().equals(
               other._routePoints,
               _routePoints,
@@ -403,6 +432,7 @@ class _$RideModelImpl with DiagnosticableTreeMixin implements _RideModel {
     carId,
     fromLocation,
     toLocation,
+    const DeepCollectionEquality().hash(_waypoints),
     const DeepCollectionEquality().hash(_routePoints),
     status,
     pricePerSeat,
@@ -433,6 +463,7 @@ abstract class _RideModel implements RideModel {
     final String? carId,
     required final LocationModel fromLocation,
     required final LocationModel toLocation,
+    final List<LocationModel> waypoints,
     final List<LatLng> routePoints,
     final String status,
     required final double pricePerSeat,
@@ -456,6 +487,8 @@ abstract class _RideModel implements RideModel {
   LocationModel get fromLocation;
   @override
   LocationModel get toLocation;
+  @override
+  List<LocationModel> get waypoints;
   @override
   List<LatLng> get routePoints; // Full road geometry
   @override

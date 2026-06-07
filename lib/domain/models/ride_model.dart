@@ -15,6 +15,7 @@ abstract class RideModel with _$RideModel {
     String? carId,
     required LocationModel fromLocation,
     required LocationModel toLocation,
+    @Default([]) List<LocationModel> waypoints,
     @Default([]) List<LatLng> routePoints, // Full road geometry
     @Default('pending') String status,
     required double pricePerSeat,

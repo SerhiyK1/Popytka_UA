@@ -10,11 +10,31 @@ class ChatRepository {
 
   ChatRepository(this._firestore);
 
+  String? _timestampToString(dynamic val) {
+    if (val == null) return null;
+    if (val is Timestamp) return val.toDate().toIso8601String();
+    if (val is String) return val;
+    return null;
+  }
+
   CollectionReference<ChatModel> get _chatsRef => _firestore
       .collection('chats')
       .withConverter(
         fromFirestore: (snapshot, _) {
-          final data = snapshot.data()!;
+          final data = Map<String, dynamic>.from(snapshot.data()!);
+          
+          if (data['lastMessageTime'] != null) {
+            data['lastMessageTime'] = _timestampToString(data['lastMessageTime']);
+          }
+          
+          if (data['lastMessage'] != null) {
+            final lastMsg = Map<String, dynamic>.from(data['lastMessage'] as Map);
+            if (lastMsg['createdAt'] != null) {
+              lastMsg['createdAt'] = _timestampToString(lastMsg['createdAt']);
+            }
+            data['lastMessage'] = lastMsg;
+          }
+          
           return ChatModel.fromJson({...data, 'id': snapshot.id});
         },
         toFirestore: (chat, _) => chat.toJson()..remove('id'),
@@ -37,7 +57,10 @@ class ChatRepository {
         .orderBy('createdAt', descending: true)
         .withConverter(
           fromFirestore: (snapshot, _) {
-            final data = snapshot.data()!;
+            final data = Map<String, dynamic>.from(snapshot.data()!);
+            if (data['createdAt'] != null) {
+              data['createdAt'] = _timestampToString(data['createdAt']);
+            }
             return MessageModel.fromJson({...data, 'id': snapshot.id});
           },
           toFirestore: (msg, _) => msg.toJson()..remove('id'),

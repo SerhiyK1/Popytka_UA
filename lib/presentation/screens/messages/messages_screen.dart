@@ -8,6 +8,7 @@ import 'package:popytka_ua/data/repositories/auth_repository.dart';
 import 'package:popytka_ua/presentation/widgets/surface_card.dart';
 import 'package:popytka_ua/presentation/theme/app_colors.dart';
 import 'package:popytka_ua/domain/models/chat_model.dart';
+import 'package:popytka_ua/data/providers/user_provider.dart';
 
 class MessagesScreen extends ConsumerWidget {
   const MessagesScreen({super.key});
@@ -58,45 +59,83 @@ class MessagesScreen extends ConsumerWidget {
               final chat = chats[index];
               final lastMsg = chat.lastMessage?.text ?? "Draft";
               // Identify "Other user" (naive: pick first not me)
-              // In real app we fetch User Profile. For MVP we show "User ID" or generic.
               final otherId = chat.participantIds.firstWhere(
                 (id) => id != user.uid,
                 orElse: () => "Unknown",
               );
 
-              return SurfaceCard(
-                onTap: () {
-                  context.push('/chat_room', extra: chat);
-                },
-                child: ListTile(
-                  contentPadding: EdgeInsets.zero,
-                  leading: const CircleAvatar(
-                    backgroundColor: AppColors.secondary,
-                    child: Icon(Icons.person, color: Colors.black),
-                  ),
-                  title: Text(
-                    "User: ${otherId.substring(0, 6)}...",
-                    style: const TextStyle(
-                      fontWeight: FontWeight.bold,
-                      color: Colors.white,
-                    ),
-                  ),
-                  subtitle: Text(
-                    lastMsg,
-                    maxLines: 1,
-                    overflow: TextOverflow.ellipsis,
-                    style: const TextStyle(color: Colors.white70),
-                  ),
-                  trailing: chat.lastMessageTime != null
-                      ? Text(
-                          DateFormat('HH:mm').format(chat.lastMessageTime!),
-                          style: const TextStyle(
-                            color: Colors.white54,
-                            fontSize: 12,
+              return Consumer(
+                builder: (context, ref, child) {
+                  final otherUserAsync = ref.watch(userByIdProvider(otherId));
+                  final onSurface = Theme.of(context).colorScheme.onSurface;
+
+                  return otherUserAsync.when(
+                    data: (otherUser) {
+                      final name = otherUser?.name ?? "Користувач";
+                      final photoUrl = otherUser?.photoUrl;
+
+                      return SurfaceCard(
+                        onTap: () {
+                          context.push('/chat_room', extra: chat);
+                        },
+                        child: ListTile(
+                          contentPadding: EdgeInsets.zero,
+                          leading: CircleAvatar(
+                            backgroundColor: AppColors.secondary.withValues(alpha: 0.2),
+                            backgroundImage: photoUrl != null ? NetworkImage(photoUrl) : null,
+                            child: photoUrl == null
+                                ? const Icon(Icons.person, color: AppColors.secondary)
+                                : null,
                           ),
-                        )
-                      : null,
-                ),
+                          title: Text(
+                            name,
+                            style: TextStyle(
+                              fontWeight: FontWeight.bold,
+                              color: onSurface,
+                            ),
+                          ),
+                          subtitle: Text(
+                            lastMsg,
+                            maxLines: 1,
+                            overflow: TextOverflow.ellipsis,
+                            style: TextStyle(color: onSurface.withValues(alpha: 0.6)),
+                          ),
+                          trailing: chat.lastMessageTime != null
+                              ? Text(
+                                  DateFormat('HH:mm').format(chat.lastMessageTime!),
+                                  style: TextStyle(
+                                    color: onSurface.withValues(alpha: 0.4),
+                                    fontSize: 12,
+                                  ),
+                                )
+                              : null,
+                        ),
+                      );
+                    },
+                    loading: () => SurfaceCard(
+                      child: const ListTile(
+                        title: SizedBox(
+                          height: 16,
+                          child: Center(
+                            child: LinearProgressIndicator(),
+                          ),
+                        ),
+                      ),
+                    ),
+                    error: (e, _) => SurfaceCard(
+                      child: ListTile(
+                        title: Text(
+                          "Користувач: ${otherId.substring(0, 6)}...",
+                          style: TextStyle(color: onSurface),
+                        ),
+                        subtitle: Text(
+                          lastMsg,
+                          style: TextStyle(color: onSurface.withValues(alpha: 0.6)),
+                        ),
+                      ),
+                    ),
+                  );
+                },
               );
             },
           );

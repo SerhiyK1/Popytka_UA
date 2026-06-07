@@ -52,18 +52,25 @@ class SearchResultsScreen extends ConsumerWidget {
           final rides = snapshot.data!;
           // Client-side filtering
           final filtered = rides.where((r) {
-            final matchesCity =
-                r.fromLocation.city.toLowerCase().contains(
-                  fromCity.toLowerCase(),
-                ) &&
-                r.toLocation.city.toLowerCase().contains(toCity.toLowerCase());
+            final fromCityClean = fromCity.split(',').first.trim().toLowerCase();
+            final toCityClean = toCity.split(',').first.trim().toLowerCase();
+            final rideFromCity = r.fromLocation.city.toLowerCase();
+            final rideToCity = r.toLocation.city.toLowerCase();
+
+            // Flexible city matching: either ride city is in search string, or vice versa
+            final matchesFrom = fromCity.toLowerCase().contains(rideFromCity) || 
+                                rideFromCity.contains(fromCityClean);
+            final matchesTo = toCity.toLowerCase().contains(rideToCity) || 
+                              rideToCity.contains(toCityClean);
+
+            final matchesCity = matchesFrom && matchesTo;
 
             if (!matchesCity) return false;
 
             // Filter by required seats
             if (r.seatsAvailable < requiredSeats) return false;
 
-            if (selectedDate != null) {
+            if (selectedDate != null && selectedDate!.isNotEmpty) {
               final searchDate = DateTime.tryParse(selectedDate!);
               if (searchDate != null) {
                 final isSameDay =
