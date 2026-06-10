@@ -23,7 +23,6 @@ class SettingsScreen extends ConsumerWidget {
 
     final settings = ref.watch(appSettingsProvider);
     String languageName = 'Українська';
-    if (currentLocale.languageCode == 'ru') languageName = 'Русский';
     if (currentLocale.languageCode == 'en') languageName = 'English';
 
     return Scaffold(
@@ -312,7 +311,6 @@ class SettingsScreen extends ConsumerWidget {
                 currentCode,
                 ref,
               ),
-              _buildLanguageOption(context, 'Русский', 'ru', currentCode, ref),
               _buildLanguageOption(context, 'English', 'en', currentCode, ref),
             ],
           ),

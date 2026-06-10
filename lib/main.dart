@@ -152,7 +152,6 @@ class PopytkaApp extends ConsumerWidget {
       ],
       supportedLocales: const [
         Locale('uk'), // Default
-        Locale('ru'),
         Locale('en'),
       ],
       theme: AppTheme.lightTheme,
