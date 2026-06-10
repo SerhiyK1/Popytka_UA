@@ -19,7 +19,7 @@ class LocaleNotifier extends _$LocaleNotifier {
       if (languageCode == 'uk' || languageCode == 'en') {
         state = Locale(languageCode);
       } else {
-        // Fallback for deprecated locales (e.g. 'ru')
+        // Fallback for deprecated locales
         state = const Locale('uk');
         await prefs.setString('languageCode', 'uk');
       }
