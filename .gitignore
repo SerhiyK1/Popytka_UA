@@ -12,11 +12,11 @@
 .swiftpm/
 migrate_working_dir/
 
-# IntelliJ related
-*.iml
-*.ipr
-*.iws
-.idea/
+# IntelliJ related (uncommented to keep configurations in Git)
+# *.iml
+# *.ipr
+# *.iws
+# .idea/
 
 # The .vscode folder contains launch configuration and tasks you configure in
 # VS Code which you may wish to be included in version control, so this line
@@ -48,3 +48,6 @@ app.*.map.json
 **/*.apk
 **/*.aab
 
+# Allow releases tracking
+!releases/
+!releases/**/*.apk
