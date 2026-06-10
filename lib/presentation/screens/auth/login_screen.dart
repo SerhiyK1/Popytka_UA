@@ -68,7 +68,7 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
             ),
           );
         }
-        await _signInWithTelegram();
+        await _signInDemoMode();
         return;
       }
 
@@ -81,23 +81,17 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
     }
   }
 
-  Future<void> _signInWithTelegram() async {
+  Future<void> _signInDemoMode() async {
     setState(() => _isLoading = true);
 
     try {
       final authRepo = ref.read(authRepositoryProvider);
       final userRepo = ref.read(userRepositoryProvider);
 
-      // In real scenario, this would open a webview or use a plugin
-      // For now, we use a mock data map
-      final result = await authRepo.signInWithTelegram({
-        'id': '12345',
-        'first_name': 'Telegram',
-        'username': 'tg_user',
-      });
+      await authRepo.signInAnonymously();
+      final firebaseUser = authRepo.currentUser;
 
-      if (result != null && result.user != null) {
-        final firebaseUser = result.user!;
+      if (firebaseUser != null) {
         final existingUser = await userRepo.getUser(firebaseUser.uid);
 
         if (existingUser == null) {
@@ -105,7 +99,7 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
             UserModel(
               id: firebaseUser.uid,
               phone: '',
-              name: 'Telegram User',
+              name: 'Demo User',
               role: 'rider',
             ),
           );
@@ -208,47 +202,6 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
                         style: ElevatedButton.styleFrom(
                           backgroundColor: Colors.white,
                           foregroundColor: Colors.black87,
-                          padding: const EdgeInsets.symmetric(vertical: 14),
-                          shape: RoundedRectangleBorder(
-                            borderRadius: BorderRadius.circular(12),
-                          ),
-                        ),
-                      ),
-                    ),
-                    const SizedBox(height: 16),
-
-                    // Divider "OR"
-                    Row(
-                      children: [
-                        const Expanded(child: Divider(color: Colors.white24)),
-                        Padding(
-                          padding: const EdgeInsets.symmetric(horizontal: 16),
-                          child: Text(
-                            t.login_or,
-                            style: const TextStyle(color: Colors.white38),
-                          ),
-                        ),
-                        const Expanded(child: Divider(color: Colors.white24)),
-                      ],
-                    ),
-                    const SizedBox(height: 16),
-
-                    // Telegram Sign-In Button
-                    SizedBox(
-                      width: double.infinity,
-                      child: ElevatedButton.icon(
-                        onPressed: _isLoading ? null : _signInWithTelegram,
-                        icon: const Icon(Icons.send, size: 20),
-                        label: Text(
-                          t.btn_sign_in_telegram,
-                          style: const TextStyle(
-                            fontSize: 16,
-                            fontWeight: FontWeight.w600,
-                          ),
-                        ),
-                        style: ElevatedButton.styleFrom(
-                          backgroundColor: AppColors.secondary,
-                          foregroundColor: Colors.white,
                           padding: const EdgeInsets.symmetric(vertical: 14),
                           shape: RoundedRectangleBorder(
                             borderRadius: BorderRadius.circular(12),

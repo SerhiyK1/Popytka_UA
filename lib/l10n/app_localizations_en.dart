@@ -303,12 +303,6 @@ class AppLocalizationsEn extends AppLocalizations {
   String get btn_sign_in_google => 'Sign in with Google';
 
   @override
-  String get btn_sign_in_telegram => 'Sign in with Telegram';
-
-  @override
-  String get login_or => 'Or';
-
-  @override
   String get wallet_balance => 'Wallet Balance';
 
   @override

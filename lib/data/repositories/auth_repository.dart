@@ -78,16 +78,4 @@ class AuthRepository {
     await _googleSignIn.signOut();
     await _auth.signOut();
   }
-
-  /// Telegram Sign-In (Stub for now)
-  Future<UserCredential?> signInWithTelegram(
-    Map<String, dynamic> userData,
-  ) async {
-    // In a real app, you'd verify the hash on a backend and get a Custom Token.
-    // For now, we simulate success by signing in anonymously or using a demo flow.
-    await Future.delayed(const Duration(seconds: 1));
-
-    // Fallback: If no real backend, just sign in anonymously for demo
-    return await _auth.signInAnonymously();
-  }
 }

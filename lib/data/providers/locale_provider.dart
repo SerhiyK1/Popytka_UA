@@ -16,13 +16,21 @@ class LocaleNotifier extends _$LocaleNotifier {
     final prefs = await SharedPreferences.getInstance();
     final languageCode = prefs.getString('languageCode');
     if (languageCode != null) {
-      state = Locale(languageCode);
+      if (languageCode == 'uk' || languageCode == 'en') {
+        state = Locale(languageCode);
+      } else {
+        // Fallback for deprecated locales (e.g. 'ru')
+        state = const Locale('uk');
+        await prefs.setString('languageCode', 'uk');
+      }
     }
   }
 
   Future<void> setLocale(String languageCode) async {
-    final prefs = await SharedPreferences.getInstance();
-    await prefs.setString('languageCode', languageCode);
-    state = Locale(languageCode);
+    if (languageCode == 'uk' || languageCode == 'en') {
+      final prefs = await SharedPreferences.getInstance();
+      await prefs.setString('languageCode', languageCode);
+      state = Locale(languageCode);
+    }
   }
 }

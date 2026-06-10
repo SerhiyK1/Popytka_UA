@@ -796,6 +796,7 @@ class _PublishRideScreenState extends ConsumerState<PublishRideScreen> {
                       style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 16),
                     ),
             ),
+            const SizedBox(height: 100),
           ],
         ),
       ),

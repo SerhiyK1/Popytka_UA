@@ -99,8 +99,6 @@
     "send_btn": "Send",
     "contact_driver": "Contact Driver",
     "btn_sign_in_google": "Sign in with Google",
-  "btn_sign_in_telegram": "Sign in with Telegram",
-  "login_or": "Or",
   "wallet_balance": "Wallet Balance",
   "view_wallet": "View Wallet",
   "rating_label": "Rating",

@@ -7,6 +7,7 @@ import 'package:popytka_ua/presentation/widgets/glass_container.dart';
 import 'package:popytka_ua/data/providers/locale_provider.dart';
 import 'package:popytka_ua/data/providers/theme_provider.dart';
 import 'package:popytka_ua/data/providers/app_settings_provider.dart';
+import 'package:popytka_ua/data/repositories/auth_repository.dart';
 
 class SettingsScreen extends ConsumerWidget {
   const SettingsScreen({super.key});
@@ -279,6 +280,32 @@ class SettingsScreen extends ConsumerWidget {
                   ),
                 ),
               ],
+            ),
+            const SizedBox(height: 24),
+            SizedBox(
+              width: double.infinity,
+              child: ElevatedButton.icon(
+                onPressed: () async {
+                  await ref.read(authRepositoryProvider).signOut();
+                  if (context.mounted) {
+                    context.go('/login');
+                  }
+                },
+                style: ElevatedButton.styleFrom(
+                  backgroundColor: Colors.redAccent.withValues(alpha: 0.1),
+                  foregroundColor: Colors.redAccent,
+                  side: const BorderSide(color: Colors.redAccent, width: 1.5),
+                  padding: const EdgeInsets.symmetric(vertical: 16),
+                  shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(16),
+                  ),
+                ),
+                icon: const Icon(Icons.logout),
+                label: const Text(
+                  'Вийти з акаунту',
+                  style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
+                ),
+              ),
             ),
             const SizedBox(height: 32),
           ],

@@ -686,18 +686,6 @@ abstract class AppLocalizations {
   /// **'Увійти через Google'**
   String get btn_sign_in_google;
 
-  /// No description provided for @btn_sign_in_telegram.
-  ///
-  /// In uk, this message translates to:
-  /// **'Увійти через Telegram'**
-  String get btn_sign_in_telegram;
-
-  /// No description provided for @login_or.
-  ///
-  /// In uk, this message translates to:
-  /// **'Або'**
-  String get login_or;
-
   /// No description provided for @wallet_balance.
   ///
   /// In uk, this message translates to:
