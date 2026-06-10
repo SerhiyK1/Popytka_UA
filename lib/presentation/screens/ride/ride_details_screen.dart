@@ -175,14 +175,19 @@ class _RideDetailsScreenState extends ConsumerState<RideDetailsScreen> with Tick
     final onSurface = theme.colorScheme.onSurface;
     final isDark = theme.brightness == Brightness.dark;
     
-    final ride = widget.ride;
     final user = ref.watch(authRepositoryProvider).currentUser;
-    final isOwner = user != null && ride.riderId == user.uid;
 
-    final fromLatLng = LatLng(ride.fromLocation.latitude, ride.fromLocation.longitude);
-    final toLatLng = LatLng(ride.toLocation.latitude, ride.toLocation.longitude);
+    return StreamBuilder<RideModel?>(
+      stream: ref.watch(rideRepositoryProvider).streamRide(widget.ride.id),
+      initialData: widget.ride,
+      builder: (context, snapshot) {
+        final ride = snapshot.data ?? widget.ride;
+        final isOwner = user != null && ride.riderId == user.uid;
 
-    return Scaffold(
+        final fromLatLng = LatLng(ride.fromLocation.latitude, ride.fromLocation.longitude);
+        final toLatLng = LatLng(ride.toLocation.latitude, ride.toLocation.longitude);
+
+        return Scaffold(
       extendBodyBehindAppBar: true,
       appBar: AppBar(
         backgroundColor: Colors.transparent,
@@ -714,6 +719,18 @@ class _RideDetailsScreenState extends ConsumerState<RideDetailsScreen> with Tick
                                                   },
                                                 ),
                                                 const SizedBox(width: 8),
+                                                if (ride.status == 'completed') ...[
+                                                  IconButton(
+                                                    icon: const Icon(Icons.star_outline, size: 18, color: Colors.amber),
+                                                    onPressed: () {
+                                                      context.push('/rate_ride', extra: {
+                                                        'rideId': ride.id,
+                                                        'ratedId': passenger.id,
+                                                      });
+                                                    },
+                                                  ),
+                                                  const SizedBox(width: 8),
+                                                ],
                                               ],
                                               Container(
                                                 padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
@@ -751,63 +768,8 @@ class _RideDetailsScreenState extends ConsumerState<RideDetailsScreen> with Tick
                       SizedBox(
                         width: double.infinity,
                         child: isOwner
-                            ? Row(
-                                children: [
-                                  Expanded(
-                                    child: OutlinedButton(
-                                      onPressed: () {
-                                        context.push('/edit_ride', extra: ride);
-                                      },
-                                      style: OutlinedButton.styleFrom(
-                                        side: const BorderSide(
-                                          color: AppColors.primary,
-                                        ),
-                                        foregroundColor: AppColors.primary,
-                                        padding: const EdgeInsets.symmetric(vertical: 12),
-                                      ),
-                                      child: Text(t.btn_edit),
-                                    ),
-                                  ),
-                                  const SizedBox(width: 12),
-                                  Expanded(
-                                    child: ElevatedButton(
-                                      onPressed: _cancelRide,
-                                      style: ElevatedButton.styleFrom(
-                                        backgroundColor: Colors.redAccent
-                                            .withValues(alpha: 0.2),
-                                        foregroundColor: Colors.redAccent,
-                                        elevation: 0,
-                                        padding: const EdgeInsets.symmetric(vertical: 12),
-                                      ),
-                                      child: Text(t.cancel),
-                                    ),
-                                  ),
-                                ],
-                              )
-                            : ElevatedButton(
-                                onPressed:
-                                    _isBooking ||
-                                        ride.seatsAvailable < 1 ||
-                                        _bookSeats < 1
-                                    ? null
-                                    : _bookRide,
-                                style: ElevatedButton.styleFrom(
-                                  backgroundColor: AppColors.primary,
-                                  foregroundColor: Colors.black,
-                                  padding: const EdgeInsets.symmetric(vertical: 16),
-                                  shape: RoundedRectangleBorder(
-                                    borderRadius: BorderRadius.circular(12),
-                                  ),
-                                ),
-                                child: _isBooking
-                                    ? const CircularProgressIndicator(color: Colors.black)
-                                    : Text(
-                                        ride.seatsAvailable > 0
-                                            ? "Забронювати ($_bookSeats)"
-                                            : t.no_seats,
-                                        style: const TextStyle(fontWeight: FontWeight.bold),
-                                      ),
-                              ),
+                            ? _buildDriverActions(ride, t, onSurface)
+                            : _buildPassengerActions(ride, t, onSurface),
                       ),
                     ],
                   ),
@@ -818,6 +780,221 @@ class _RideDetailsScreenState extends ConsumerState<RideDetailsScreen> with Tick
         ],
       ),
     );
+      },
+    );
+  }
+
+  Widget _buildDriverActions(RideModel ride, AppLocalizations t, Color onSurface) {
+    if (ride.status == 'pending') {
+      return Column(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          SizedBox(
+            width: double.infinity,
+            child: ElevatedButton.icon(
+              onPressed: () async {
+                try {
+                  await ref.read(rideRepositoryProvider).updateRideStatus(ride.id, 'active');
+                  if (mounted) {
+                    ScaffoldMessenger.of(context).showSnackBar(
+                      const SnackBar(content: Text("Поїздку розпочато!")),
+                    );
+                  }
+                } catch (e) {
+                  if (mounted) {
+                    ScaffoldMessenger.of(context).showSnackBar(
+                      SnackBar(content: Text("Помилка початку поїздки: $e")),
+                    );
+                  }
+                }
+              },
+              icon: const Icon(Icons.play_arrow),
+              label: const Text("Почати поїздку"),
+              style: ElevatedButton.styleFrom(
+                backgroundColor: Colors.green,
+                foregroundColor: Colors.white,
+                padding: const EdgeInsets.symmetric(vertical: 16),
+                shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(12),
+                ),
+              ),
+            ),
+          ),
+          const SizedBox(height: 12),
+          Row(
+            children: [
+              Expanded(
+                child: OutlinedButton(
+                  onPressed: () {
+                    context.push('/edit_ride', extra: ride);
+                  },
+                  style: OutlinedButton.styleFrom(
+                    side: const BorderSide(color: AppColors.primary),
+                    foregroundColor: AppColors.primary,
+                    padding: const EdgeInsets.symmetric(vertical: 12),
+                  ),
+                  child: Text(t.btn_edit),
+                ),
+              ),
+              const SizedBox(width: 12),
+              Expanded(
+                child: ElevatedButton(
+                  onPressed: _cancelRide,
+                  style: ElevatedButton.styleFrom(
+                    backgroundColor: Colors.redAccent.withValues(alpha: 0.2),
+                    foregroundColor: Colors.redAccent,
+                    elevation: 0,
+                    padding: const EdgeInsets.symmetric(vertical: 12),
+                  ),
+                  child: Text(t.cancel),
+                ),
+              ),
+            ],
+          ),
+        ],
+      );
+    } else if (ride.status == 'active') {
+      return SizedBox(
+        width: double.infinity,
+        child: ElevatedButton.icon(
+          onPressed: () async {
+            try {
+              await ref.read(rideRepositoryProvider).updateRideStatus(ride.id, 'completed');
+              if (mounted) {
+                ScaffoldMessenger.of(context).showSnackBar(
+                  const SnackBar(content: Text("Поїздку завершено!")),
+                );
+              }
+            } catch (e) {
+              if (mounted) {
+                ScaffoldMessenger.of(context).showSnackBar(
+                  SnackBar(content: Text("Помилка завершення поїздки: $e")),
+                );
+              }
+            }
+          },
+          icon: const Icon(Icons.check),
+          label: const Text("Завершити поїздку"),
+          style: ElevatedButton.styleFrom(
+            backgroundColor: AppColors.primary,
+            foregroundColor: Colors.black,
+            padding: const EdgeInsets.symmetric(vertical: 16),
+            shape: RoundedRectangleBorder(
+              borderRadius: BorderRadius.circular(12),
+            ),
+          ),
+        ),
+      );
+    } else if (ride.status == 'completed') {
+      return Container(
+        padding: const EdgeInsets.symmetric(vertical: 16),
+        alignment: Alignment.center,
+        decoration: BoxDecoration(
+          color: onSurface.withValues(alpha: 0.05),
+          borderRadius: BorderRadius.circular(12),
+        ),
+        child: Text(
+          "Поїздку завершено! Дякуємо за поїздку.",
+          style: TextStyle(
+            color: onSurface.withValues(alpha: 0.54),
+            fontWeight: FontWeight.bold,
+            fontSize: 16,
+          ),
+        ),
+      );
+    } else {
+      return Container(
+        padding: const EdgeInsets.symmetric(vertical: 16),
+        alignment: Alignment.center,
+        decoration: BoxDecoration(
+          color: Colors.redAccent.withValues(alpha: 0.05),
+          borderRadius: BorderRadius.circular(12),
+        ),
+        child: const Text(
+          "Поїздку скасовано",
+          style: TextStyle(
+            color: Colors.redAccent,
+            fontWeight: FontWeight.bold,
+            fontSize: 16,
+          ),
+        ),
+      );
+    }
+  }
+
+  Widget _buildPassengerActions(RideModel ride, AppLocalizations t, Color onSurface) {
+    if (ride.status == 'pending') {
+      return ElevatedButton(
+        onPressed: _isBooking || ride.seatsAvailable < 1 || _bookSeats < 1 ? null : _bookRide,
+        style: ElevatedButton.styleFrom(
+          backgroundColor: AppColors.primary,
+          foregroundColor: Colors.black,
+          padding: const EdgeInsets.symmetric(vertical: 16),
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(12),
+          ),
+        ),
+        child: _isBooking
+            ? const CircularProgressIndicator(color: Colors.black)
+            : Text(
+                ride.seatsAvailable > 0 ? "Забронювати ($_bookSeats)" : t.no_seats,
+                style: const TextStyle(fontWeight: FontWeight.bold),
+              ),
+      );
+    } else if (ride.status == 'active') {
+      return Container(
+        padding: const EdgeInsets.symmetric(vertical: 16),
+        alignment: Alignment.center,
+        decoration: BoxDecoration(
+          color: onSurface.withValues(alpha: 0.05),
+          borderRadius: BorderRadius.circular(12),
+        ),
+        child: Text(
+          "Поїздка в дорозі...",
+          style: TextStyle(
+            color: onSurface.withValues(alpha: 0.54),
+            fontWeight: FontWeight.bold,
+            fontSize: 16,
+          ),
+        ),
+      );
+    } else if (ride.status == 'completed') {
+      return ElevatedButton.icon(
+        onPressed: () {
+          context.push('/rate_ride', extra: {
+            'rideId': ride.id,
+            'ratedId': ride.driverId ?? ride.riderId,
+          });
+        },
+        icon: const Icon(Icons.star),
+        label: const Text("Оцінити водія"),
+        style: ElevatedButton.styleFrom(
+          backgroundColor: Colors.amber,
+          foregroundColor: Colors.black,
+          padding: const EdgeInsets.symmetric(vertical: 16),
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(12),
+          ),
+        ),
+      );
+    } else {
+      return Container(
+        padding: const EdgeInsets.symmetric(vertical: 16),
+        alignment: Alignment.center,
+        decoration: BoxDecoration(
+          color: Colors.redAccent.withValues(alpha: 0.05),
+          borderRadius: BorderRadius.circular(12),
+        ),
+        child: const Text(
+          "Поїздку скасовано",
+          style: TextStyle(
+            color: Colors.redAccent,
+            fontWeight: FontWeight.bold,
+            fontSize: 16,
+          ),
+        ),
+      );
+    }
   }
 
   Marker _buildPulsingMarker(double lat, double lng, {bool isOrigin = true}) {

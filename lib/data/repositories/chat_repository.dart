@@ -115,6 +115,17 @@ class ChatRepository {
 
     return deterministicId;
   }
+
+  // 5. Delete Chat (deletes messages subcollection + chat doc in a batch)
+  Future<void> deleteChat(String chatId) async {
+    final messagesSnapshot = await _chatsRef.doc(chatId).collection('messages').get();
+    final batch = _firestore.batch();
+    for (var doc in messagesSnapshot.docs) {
+      batch.delete(doc.reference);
+    }
+    batch.delete(_chatsRef.doc(chatId));
+    await batch.commit();
+  }
 }
 
 @riverpod

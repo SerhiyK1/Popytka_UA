@@ -136,7 +136,7 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
                   16,
                   MediaQuery.of(context).padding.top + 70,
                   16,
-                  30,
+                  120,
                 ),
                 child: Column(
                   children: [
@@ -564,33 +564,120 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
   }
 
   Widget _buildRatingItem(RatingModel rating, Color onSurface) {
+    final raterAsync = ref.watch(userByIdProvider(rating.raterId));
+
     return Padding(
-      padding: const EdgeInsets.symmetric(vertical: 8.0),
+      padding: const EdgeInsets.symmetric(vertical: 12.0),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Row(
-            children: [
-              ...List.generate(
-                5,
-                (i) => Icon(
-                  i < rating.rating ? Icons.star : Icons.star_border,
-                  color: Colors.amber,
-                  size: 16,
+          raterAsync.when(
+            data: (rater) {
+              final name = rater?.name ?? "Користувач";
+              final photoUrl = rater?.photoUrl;
+              return Row(
+                children: [
+                  CircleAvatar(
+                    radius: 18,
+                    backgroundColor: AppColors.secondary.withValues(alpha: 0.1),
+                    backgroundImage: photoUrl != null ? NetworkImage(photoUrl) : null,
+                    child: photoUrl == null
+                        ? const Icon(Icons.person, size: 18, color: AppColors.secondary)
+                        : null,
+                  ),
+                  const SizedBox(width: 12),
+                  Expanded(
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Text(
+                          name,
+                          style: TextStyle(
+                            color: onSurface,
+                            fontWeight: FontWeight.bold,
+                            fontSize: 14,
+                          ),
+                        ),
+                        const SizedBox(height: 2),
+                        Row(
+                          children: [
+                            ...List.generate(
+                              5,
+                              (i) => Icon(
+                                i < rating.rating ? Icons.star : Icons.star_border,
+                                color: Colors.amber,
+                                size: 14,
+                              ),
+                            ),
+                            const SizedBox(width: 8),
+                            Text(
+                              DateFormat.yMMMd().format(rating.createdAt),
+                              style: TextStyle(
+                                color: onSurface.withValues(alpha: 0.54),
+                                fontSize: 11,
+                              ),
+                            ),
+                          ],
+                        ),
+                      ],
+                    ),
+                  ),
+                ],
+              );
+            },
+            loading: () => const SizedBox(
+              height: 36,
+              child: Center(
+                child: SizedBox(
+                  width: 16,
+                  height: 16,
+                  child: CircularProgressIndicator(strokeWidth: 1.5),
                 ),
               ),
-              const Spacer(),
-              Text(
-                DateFormat.yMMMd().format(rating.createdAt),
-                style: TextStyle(color: onSurface.withValues(alpha: 0.54), fontSize: 12),
-              ),
-            ],
+            ),
+            error: (_, __) => Row(
+              children: [
+                const CircleAvatar(
+                  radius: 18,
+                  child: Icon(Icons.person, size: 18),
+                ),
+                const SizedBox(width: 12),
+                Expanded(
+                  child: Row(
+                    children: [
+                      ...List.generate(
+                        5,
+                        (i) => Icon(
+                          i < rating.rating ? Icons.star : Icons.star_border,
+                          color: Colors.amber,
+                          size: 14,
+                        ),
+                      ),
+                      const SizedBox(width: 8),
+                      Text(
+                        DateFormat.yMMMd().format(rating.createdAt),
+                        style: TextStyle(
+                          color: onSurface.withValues(alpha: 0.54),
+                          fontSize: 11,
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+              ],
+            ),
           ),
           if (rating.comment != null && rating.comment!.isNotEmpty) ...[
             const SizedBox(height: 8),
-            Text(
-              rating.comment!,
-              style: TextStyle(color: onSurface.withValues(alpha: 0.7)),
+            Padding(
+              padding: const EdgeInsets.only(left: 48.0), // Indent comment under name/avatar
+              child: Text(
+                rating.comment!,
+                style: TextStyle(
+                  color: onSurface.withValues(alpha: 0.8),
+                  fontSize: 13.5,
+                ),
+              ),
             ),
           ],
         ],

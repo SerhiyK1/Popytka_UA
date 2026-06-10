@@ -14,7 +14,11 @@ service cloud.firestore {
     // Users collection
     match /users/{userId} {
       allow read: if isAuthenticated();
-      allow write: if isOwner(userId) || (isAuthenticated() && get(/databases/$(database)/documents/users/$(request.auth.uid)).data.role == 'admin');
+      allow create: if isOwner(userId) || (isAuthenticated() && get(/databases/$(database)/documents/users/$(request.auth.uid)).data.role == 'admin');
+      allow update: if isOwner(userId) || 
+                    (isAuthenticated() && request.resource.data.diff(resource.data).affectedKeys().hasOnly(['averageRating', 'numberOfRatings'])) ||
+                    (isAuthenticated() && get(/databases/$(database)/documents/users/$(request.auth.uid)).data.role == 'admin');
+      allow delete: if isAuthenticated() && get(/databases/$(database)/documents/users/$(request.auth.uid)).data.role == 'admin';
     }
     
     // Rides collection
@@ -74,6 +78,8 @@ service cloud.firestore {
         request.auth.uid in request.resource.data.participantIds;
       allow update: if isAuthenticated() &&
         request.auth.uid in resource.data.participantIds;
+      allow delete: if isAuthenticated() &&
+        request.auth.uid in resource.data.participantIds;
       
       match /messages/{messageId} {
         allow read: if isAuthenticated() &&
@@ -81,6 +87,9 @@ service cloud.firestore {
           
         allow create: if isAuthenticated() &&
           request.auth.uid == request.resource.data.senderId;
+          
+        allow delete: if isAuthenticated() &&
+          request.auth.uid in chatId.split('_');
       }
     }
     
@@ -99,7 +108,7 @@ service cloud.firestore {
     // Ratings collection
     match /ratings/{ratingId} {
       allow read: if isAuthenticated();
-      allow create: if isAuthenticated() && request.auth.uid == request.resource.data.fromId;
+      allow create: if isAuthenticated() && request.auth.uid == request.resource.data.raterId;
     }
     
     // Admin collection

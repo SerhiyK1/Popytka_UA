@@ -52,7 +52,7 @@ class MessagesScreen extends ConsumerWidget {
           }
 
           return ListView.separated(
-            padding: const EdgeInsets.all(16),
+            padding: const EdgeInsets.only(left: 16, right: 16, top: 16, bottom: 120),
             itemCount: chats.length,
             separatorBuilder: (_, __) => const SizedBox(height: 12),
             itemBuilder: (context, index) {
@@ -69,68 +69,123 @@ class MessagesScreen extends ConsumerWidget {
                   final otherUserAsync = ref.watch(userByIdProvider(otherId));
                   final onSurface = Theme.of(context).colorScheme.onSurface;
 
-                  return otherUserAsync.when(
-                    data: (otherUser) {
-                      final name = otherUser?.name ?? "Користувач";
-                      final photoUrl = otherUser?.photoUrl;
-
-                      return SurfaceCard(
-                        onTap: () {
-                          context.push('/chat_room', extra: chat);
-                        },
-                        child: ListTile(
-                          contentPadding: EdgeInsets.zero,
-                          leading: CircleAvatar(
-                            backgroundColor: AppColors.secondary.withValues(alpha: 0.2),
-                            backgroundImage: photoUrl != null ? NetworkImage(photoUrl) : null,
-                            child: photoUrl == null
-                                ? const Icon(Icons.person, color: AppColors.secondary)
-                                : null,
+                  return Dismissible(
+                    key: Key(chat.id),
+                    direction: DismissDirection.endToStart,
+                    background: Container(
+                      alignment: Alignment.centerRight,
+                      padding: const EdgeInsets.only(right: 20),
+                      decoration: BoxDecoration(
+                        color: Colors.redAccent,
+                        borderRadius: BorderRadius.circular(16),
+                      ),
+                      child: const Icon(
+                        Icons.delete,
+                        color: Colors.white,
+                      ),
+                    ),
+                    confirmDismiss: (direction) async {
+                      final confirmed = await showDialog<bool>(
+                        context: context,
+                        builder: (context) => AlertDialog(
+                          backgroundColor: Theme.of(context).colorScheme.surface,
+                          title: const Text("Видалити чат?"),
+                          content: const Text(
+                            "Ви впевнені, що хочете видалити цей чат? Усю історію листування буде назавжди втрачено.",
                           ),
-                          title: Text(
-                            name,
-                            style: TextStyle(
-                              fontWeight: FontWeight.bold,
-                              color: onSurface,
+                          actions: [
+                            TextButton(
+                              onPressed: () => Navigator.of(context).pop(false),
+                              child: const Text("Скасувати"),
                             ),
-                          ),
-                          subtitle: Text(
-                            lastMsg,
-                            maxLines: 1,
-                            overflow: TextOverflow.ellipsis,
-                            style: TextStyle(color: onSurface.withValues(alpha: 0.6)),
-                          ),
-                          trailing: chat.lastMessageTime != null
-                              ? Text(
-                                  DateFormat('HH:mm').format(chat.lastMessageTime!),
-                                  style: TextStyle(
-                                    color: onSurface.withValues(alpha: 0.4),
-                                    fontSize: 12,
-                                  ),
-                                )
-                              : null,
+                            TextButton(
+                              onPressed: () => Navigator.of(context).pop(true),
+                              child: const Text(
+                                "Видалити",
+                                style: TextStyle(color: Colors.redAccent),
+                              ),
+                            ),
+                          ],
                         ),
                       );
+                      return confirmed ?? false;
                     },
-                    loading: () => SurfaceCard(
-                      child: const ListTile(
-                        title: SizedBox(
-                          height: 16,
-                          child: Center(
-                            child: LinearProgressIndicator(),
+                    onDismissed: (direction) async {
+                      final messenger = ScaffoldMessenger.of(context);
+                      try {
+                        await ref.read(chatRepositoryProvider).deleteChat(chat.id);
+                        messenger.showSnackBar(
+                          const SnackBar(content: Text("Чат видалено")),
+                        );
+                      } catch (e) {
+                        messenger.showSnackBar(
+                          SnackBar(content: Text("Помилка видалення чату: $e")),
+                        );
+                      }
+                    },
+                    child: otherUserAsync.when(
+                      data: (otherUser) {
+                        final name = otherUser?.name ?? "Користувач";
+                        final photoUrl = otherUser?.photoUrl;
+
+                        return SurfaceCard(
+                          onTap: () {
+                            context.push('/chat_room', extra: chat);
+                          },
+                          child: ListTile(
+                            contentPadding: EdgeInsets.zero,
+                            leading: CircleAvatar(
+                              backgroundColor: AppColors.secondary.withValues(alpha: 0.2),
+                              backgroundImage: photoUrl != null ? NetworkImage(photoUrl) : null,
+                              child: photoUrl == null
+                                  ? const Icon(Icons.person, color: AppColors.secondary)
+                                  : null,
+                            ),
+                            title: Text(
+                              name,
+                              style: TextStyle(
+                                fontWeight: FontWeight.bold,
+                                color: onSurface,
+                              ),
+                            ),
+                            subtitle: Text(
+                              lastMsg,
+                              maxLines: 1,
+                              overflow: TextOverflow.ellipsis,
+                              style: TextStyle(color: onSurface.withValues(alpha: 0.6)),
+                            ),
+                            trailing: chat.lastMessageTime != null
+                                ? Text(
+                                    DateFormat('HH:mm').format(chat.lastMessageTime!),
+                                    style: TextStyle(
+                                      color: onSurface.withValues(alpha: 0.4),
+                                      fontSize: 12,
+                                    ),
+                                  )
+                                : null,
+                          ),
+                        );
+                      },
+                      loading: () => SurfaceCard(
+                        child: const ListTile(
+                          title: SizedBox(
+                            height: 16,
+                            child: Center(
+                              child: LinearProgressIndicator(),
+                            ),
                           ),
                         ),
                       ),
-                    ),
-                    error: (e, _) => SurfaceCard(
-                      child: ListTile(
-                        title: Text(
-                          "Користувач: ${otherId.substring(0, 6)}...",
-                          style: TextStyle(color: onSurface),
-                        ),
-                        subtitle: Text(
-                          lastMsg,
-                          style: TextStyle(color: onSurface.withValues(alpha: 0.6)),
+                      error: (e, _) => SurfaceCard(
+                        child: ListTile(
+                          title: Text(
+                            "Користувач: ${otherId.substring(0, 6)}...",
+                            style: TextStyle(color: onSurface),
+                          ),
+                          subtitle: Text(
+                            lastMsg,
+                            style: TextStyle(color: onSurface.withValues(alpha: 0.6)),
+                          ),
                         ),
                       ),
                     ),

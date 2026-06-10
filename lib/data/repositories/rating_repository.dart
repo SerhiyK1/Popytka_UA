@@ -36,6 +36,15 @@ class RatingRepository {
     await _updateUserRating(rating.ratedId);
   }
 
+  Future<bool> hasRated(String rideId, String raterId, String ratedId) async {
+    final snapshot = await _ratingsRef
+        .where('rideId', isEqualTo: rideId)
+        .where('raterId', isEqualTo: raterId)
+        .where('ratedId', isEqualTo: ratedId)
+        .get();
+    return snapshot.docs.isNotEmpty;
+  }
+
   Stream<List<RatingModel>> getUserRatings(String userId) {
     return _ratingsRef
         .where('ratedId', isEqualTo: userId)
